@@ -1,0 +1,90 @@
+{{define "login.html"}}
+{{template "base.html" .}}
+
+{{define "content"}}
+<div class="flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold">go-find-goodwill</h1>
+            <p class="text-gray-600">Please sign in to continue</p>
+        </div>
+
+        <form id="login-form" class="space-y-4">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required class="w-full p-2 border rounded">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required class="w-full p-2 border rounded">
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input type="checkbox" id="remember-me" name="remember_me" class="mr-2">
+                    <label for="remember-me">Remember me</label>
+                </div>
+                <a href="#" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="w-full btn btn-primary">
+                Sign In
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-sm text-gray-500">
+            <p>© 2023 go-find-goodwill. All rights reserved.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('login-form');
+
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(loginForm);
+        const username = formData.get('username');
+        const password = formData.get('password');
+        const remember = formData.get('remember_me') === 'on';
+
+        try {
+            // In a real app, this would call the login API
+            // For now, we'll just redirect to dashboard
+            console.log('Login attempt:', {username, password, remember});
+
+            // Show loading state
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Signing In...';
+
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Redirect to dashboard
+            window.location.href = '/dashboard';
+
+        } catch (error) {
+            console.error('Login failed:', error);
+            showFlashMessage('danger', 'Invalid username or password');
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Sign In';
+        }
+    });
+
+    function showFlashMessage(type, message) {
+        const flashContainer = document.getElementById('flash-messages');
+        const flashMsg = document.createElement('div');
+        flashMsg.className = `bg-${type}-100 border border-${type}-400 text-${type}-700 px-4 py-3 rounded`;
+        flashMsg.textContent = message;
+
+        flashContainer.appendChild(flashMsg);
+        setTimeout(() => flashMsg.remove(), 5000);
+    }
+});
+</script>
+{{end}}

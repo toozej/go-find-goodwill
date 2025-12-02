@@ -1,0 +1,201 @@
+{{define "notifications.html"}}
+{{template "base.html" .}}
+
+{{define "content"}}
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold">Notification Center</h1>
+
+    <!-- Notification Controls -->
+    <div class="flex justify-between items-center">
+        <div class="flex space-x-2">
+            <button id="refresh-notifications" class="btn btn-secondary">
+                <span class="mr-2">🔄</span> Refresh
+            </button>
+            <button id="test-notification" class="btn btn-primary">
+                <span class="mr-2">📧</span> Test Notification
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification List -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Recent Notifications</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left p-2">Type</th>
+                        <th class="text-left p-2">Status</th>
+                        <th class="text-left p-2">Item</th>
+                        <th class="text-left p-2">Search</th>
+                        <th class="text-left p-2">Created At</th>
+                    </tr>
+                </thead>
+                <tbody id="notifications-table">
+                    <tr>
+                        <td colspan="5" class="text-center p-4">Loading notifications...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Test Notification Modal -->
+    <div id="test-notification-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden" style="z-index: 1000;">
+        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Test Notification</h2>
+                <button id="close-test-modal" class="text-gray-500 hover:text-gray-700">
+                    <span class="text-2xl">×</span>
+                </button>
+            </div>
+
+            <form id="test-notification-form" class="space-y-4">
+                <div class="form-group">
+                    <label for="notification-type">Notification Type</label>
+                    <select id="notification-type" name="type" required class="w-full p-2 border rounded">
+                        <option value="item_found">Item Found</option>
+                        <option value="price_drop">Price Drop</option>
+                        <option value="auction_ending">Auction Ending</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="notification-recipient">Recipient Email</label>
+                    <input type="email" id="notification-recipient" name="recipient" required class="w-full p-2 border rounded">
+                </div>
+
+                <div class="form-group">
+                    <label for="notification-item">Item ID (Optional)</label>
+                    <input type="number" id="notification-item" name="item_id" class="w-full p-2 border rounded">
+                </div>
+
+                <div class="form-group">
+                    <label for="notification-search">Search ID (Optional)</label>
+                    <input type="number" id="notification-search" name="search_id" class="w-full p-2 border rounded">
+                </div>
+
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" id="cancel-test-btn" class="btn btn-secondary">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Send Test
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const api = new GoodwillAPI();
+    const notificationsTable = document.getElementById('notifications-table');
+    const refreshBtn = document.getElementById('refresh-notifications');
+    const testBtn = document.getElementById('test-notification');
+    const testModal = document.getElementById('test-notification-modal');
+    const closeTestModal = document.getElementById('close-test-modal');
+    const cancelTestBtn = document.getElementById('cancel-test-btn');
+    const testForm = document.getElementById('test-notification-form');
+
+    let currentNotifications = [];
+
+    // Load notifications
+    async function loadNotifications() {
+        try {
+            const response = await api.getNotifications({limit: 20});
+            currentNotifications = response.notifications || [];
+            renderNotificationsTable();
+        } catch (error) {
+            console.error('Failed to load notifications:', error);
+            notificationsTable.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-danger">Failed to load notifications</td></tr>';
+        }
+    }
+
+    // Render notifications table
+    function renderNotificationsTable() {
+        if (currentNotifications.length === 0) {
+            notificationsTable.innerHTML = '<tr><td colspan="5" class="text-center p-4">No notifications found</td></tr>';
+            return;
+        }
+
+        notificationsTable.innerHTML = '';
+        currentNotifications.forEach(notification => {
+            const row = document.createElement('tr');
+            row.className = 'border-b hover:bg-gray-50';
+
+            row.innerHTML = `
+                <td class="p-2">${notification.notification_type}</td>
+                <td class="p-2">
+                    <span class="badge ${notification.status === 'sent' ? 'badge-success' : notification.status === 'failed' ? 'badge-danger' : 'badge-warning'}">
+                        ${notification.status}
+                    </span>
+                </td>
+                <td class="p-2">${notification.item_id || 'N/A'}</td>
+                <td class="p-2">${notification.search_id || 'N/A'}</td>
+                <td class="p-2">${notification.created_at}</td>
+            `;
+
+            notificationsTable.appendChild(row);
+        });
+    }
+
+    // Show test notification modal
+    function showTestModal() {
+        testForm.reset();
+        testModal.classList.remove('hidden');
+    }
+
+    // Send test notification
+    async function sendTestNotification(e) {
+        e.preventDefault();
+
+        const formData = new FormData(testForm);
+        const notificationData = {
+            type: formData.get('type'),
+            recipient: formData.get('recipient'),
+            item_id: formData.get('item_id') || null,
+            search_id: formData.get('search_id') || null
+        };
+
+        try {
+            const response = await api.testNotification(notificationData);
+            showFlashMessage('success', `Test notification sent: ${response.message}`);
+            testModal.classList.add('hidden');
+        } catch (error) {
+            console.error('Failed to send test notification:', error);
+            showFlashMessage('danger', 'Failed to send test notification');
+        }
+    }
+
+    // Show flash message
+    function showFlashMessage(type, message) {
+        const flashContainer = document.getElementById('flash-messages');
+        const flashMsg = document.createElement('div');
+        flashMsg.className = `bg-${type}-100 border border-${type}-400 text-${type}-700 px-4 py-3 rounded`;
+        flashMsg.textContent = message;
+
+        flashContainer.appendChild(flashMsg);
+        setTimeout(() => flashMsg.remove(), 5000);
+    }
+
+    // Event listeners
+    refreshBtn.addEventListener('click', loadNotifications);
+    testBtn.addEventListener('click', showTestModal);
+    closeTestModal.addEventListener('click', () => testModal.classList.add('hidden'));
+    cancelTestBtn.addEventListener('click', () => testModal.classList.add('hidden'));
+    testForm.addEventListener('submit', sendTestNotification);
+
+    // Close modal when clicking outside
+    testModal.addEventListener('click', (e) => {
+        if (e.target === testModal) {
+            testModal.classList.add('hidden');
+        }
+    });
+
+    // Load initial data
+    loadNotifications();
+});
+</script>
+{{end}}

@@ -1,0 +1,126 @@
+{{define "dashboard.html"}}
+{{template "base.html" .}}
+
+{{define "content"}}
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold">Dashboard</h1>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold">Active Searches</h3>
+            <p class="text-3xl font-bold" id="active-searches">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold">Items Found Today</h3>
+            <p class="text-3xl font-bold" id="items-today">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold">Notifications Sent</h3>
+            <p class="text-3xl font-bold" id="notifications-sent">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold">System Status</h3>
+            <p class="text-3xl font-bold" id="system-status">Running</p>
+        </div>
+    </div>
+
+    <!-- Recent Items -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Recent Items</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left p-2">Title</th>
+                        <th class="text-left p-2">Price</th>
+                        <th class="text-left p-2">Ends At</th>
+                        <th class="text-left p-2">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-items">
+                    <tr>
+                        <td colspan="4" class="text-center p-4">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">System Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p><strong>Version:</strong> <span id="system-version">1.0.0</span></p>
+                <p><strong>Uptime:</strong> <span id="system-uptime">Loading...</span></p>
+            </div>
+            <div>
+                <p><strong>Last Search:</strong> <span id="last-search">Loading...</span></p>
+                <p><strong>Next Search:</strong> <span id="next-search">Loading...</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load dashboard data
+    loadDashboardData();
+
+    async function loadDashboardData() {
+        try {
+            // Load system status
+            const statusResponse = await api.getSystemStatus();
+            document.getElementById('system-status').textContent = statusResponse.status;
+            document.getElementById('system-version').textContent = statusResponse.version;
+            document.getElementById('system-uptime').textContent = statusResponse.uptime;
+            document.getElementById('last-search').textContent = statusResponse.last_search || 'Never';
+            document.getElementById('next-search').textContent = statusResponse.next_search || 'Never';
+
+            // Load searches
+            const searchesResponse = await api.getSearches({enabled: true});
+            document.getElementById('active-searches').textContent = searchesResponse.total;
+
+            // Load recent items
+            const itemsResponse = await api.getItems({limit: 5});
+            const itemsTable = document.getElementById('recent-items');
+            itemsTable.innerHTML = '';
+
+            if (itemsResponse.items && itemsResponse.items.length > 0) {
+                itemsResponse.items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b hover:bg-gray-50';
+
+                    row.innerHTML = `
+                        <td class="p-2"><a href="/items/${item.id}" class="text-blue-600 hover:underline">${item.title}</a></td>
+                        <td class="p-2">$${item.current_price.toFixed(2)}</td>
+                        <td class="p-2">${item.ends_at || 'N/A'}</td>
+                        <td class="p-2"><span class="px-2 py-1 rounded-full text-xs ${item.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${item.status}</span></td>
+                    `;
+
+                    itemsTable.appendChild(row);
+                });
+            } else {
+                itemsTable.innerHTML = '<tr><td colspan="4" class="text-center p-4">No recent items found</td></tr>';
+            }
+
+            // Load notifications
+            const notificationsResponse = await api.getNotifications({limit: 1});
+            document.getElementById('notifications-sent').textContent = notificationsResponse.total;
+
+            // Set items found today (mock data for now)
+            document.getElementById('items-today').textContent = itemsResponse.total;
+
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+            // Show error to user
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded';
+            errorMsg.textContent = 'Failed to load dashboard data. Please refresh the page.';
+            document.querySelector('main').prepend(errorMsg);
+        }
+    }
+});
+</script>
+{{end}}

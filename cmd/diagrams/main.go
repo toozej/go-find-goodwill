@@ -1,6 +1,6 @@
-// Package main provides diagram generation utilities for the golang-starter project.
+// Package main provides diagram generation utilities for the go-find-goodwill project.
 //
-// This application generates architectural and component diagrams for the golang-starter
+// This application generates architectural and component diagrams for the go-find-goodwill
 // template using the go-diagrams library. It creates visual representations of the
 // project structure and component relationships to aid in documentation and understanding.
 //
@@ -57,35 +57,51 @@ func main() {
 }
 
 // generateArchitectureDiagram creates a high-level architecture diagram showing
-// the interaction flow between users and the golang-starter application components.
+// the interaction flow between users and the go-find-goodwill application components.
 //
 // The diagram illustrates:
-//   - User interaction with the CLI application
-//   - Configuration management flow
-//   - Integration with the starter package
-//   - Logging system integration
+//   - User interaction with both CLI and Web UI
+//   - Core service handling both interfaces
+//   - Integration with ShopGoodwill API client
+//   - Database layer (SQLite/GORM)
+//   - Notification service
+//   - Anti-bot measures
+//   - Scheduling system
 //
 // The diagram is rendered in top-to-bottom (TB) direction and saved as
 // "architecture.dot" in the current working directory. The function will
 // terminate the program with log.Fatal if diagram creation or rendering fails.
 func generateArchitectureDiagram() {
-	d, err := diagram.New(diagram.Filename("architecture"), diagram.Label("Golang Starter Architecture"), diagram.Direction("TB"))
+	d, err := diagram.New(diagram.Filename("architecture"), diagram.Label("go-find-goodwill Architecture"), diagram.Direction("TB"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Define components
 	user := generic.Blank.Blank(diagram.NodeLabel("User"))
-	cli := programming.Language.Go(diagram.NodeLabel("CLI Application"))
+	cli := programming.Language.Go(diagram.NodeLabel("CLI Interface"))
+	webUI := programming.Language.Go(diagram.NodeLabel("Web UI"))
+	coreService := programming.Language.Go(diagram.NodeLabel("Core Service"))
+	apiClient := programming.Language.Go(diagram.NodeLabel("ShopGoodwill API Client"))
+	database := programming.Language.Go(diagram.NodeLabel("Database Layer\n(SQLite/GORM)"))
+	notification := programming.Language.Go(diagram.NodeLabel("Notification Service"))
+	antiBot := programming.Language.Go(diagram.NodeLabel("Anti-Bot Measures"))
+	scheduler := programming.Language.Go(diagram.NodeLabel("Scheduling System"))
 	config := generic.Blank.Blank(diagram.NodeLabel("Configuration\n(env/godotenv)"))
-	starter := programming.Language.Go(diagram.NodeLabel("Starter Package"))
 	logging := generic.Blank.Blank(diagram.NodeLabel("Logging\n(logrus)"))
 
-	// Create connections
+	// Create connections showing the flow
 	d.Connect(user, cli, diagram.Forward())
-	d.Connect(cli, config, diagram.Forward())
-	d.Connect(cli, starter, diagram.Forward())
-	d.Connect(cli, logging, diagram.Forward())
+	d.Connect(user, webUI, diagram.Forward())
+	d.Connect(cli, coreService, diagram.Forward())
+	d.Connect(webUI, coreService, diagram.Forward())
+	d.Connect(coreService, apiClient, diagram.Forward())
+	d.Connect(coreService, database, diagram.Forward())
+	d.Connect(coreService, notification, diagram.Forward())
+	d.Connect(coreService, scheduler, diagram.Forward())
+	d.Connect(apiClient, antiBot, diagram.Forward())
+	d.Connect(coreService, config, diagram.Forward())
+	d.Connect(coreService, logging, diagram.Forward())
 
 	if err := d.Render(); err != nil {
 		log.Fatal(err)
@@ -93,37 +109,90 @@ func generateArchitectureDiagram() {
 }
 
 // generateComponentDiagram creates a detailed component diagram showing the
-// relationships and dependencies between different packages in the golang-starter project.
+// relationships and dependencies between different packages in the go-find-goodwill project.
 //
 // The diagram illustrates:
 //   - main.go as the entry point
-//   - cmd/golang-starter package handling CLI operations
-//   - Integration with configuration, starter, version, and man packages
+//   - cmd/go-find-goodwill package handling CLI operations
+//   - Web server components (web/main.go, API handlers, UI handlers)
+//   - Core service components (search manager, deduplication, scheduling)
+//   - Database layer (GORM database, repository)
+//   - Notification service components
+//   - Anti-bot measures components
+//   - Configuration, version, and man packages
 //   - Data flow between components
 //
 // The diagram is rendered in left-to-right (LR) direction and saved as
 // "components.dot" in the current working directory. The function will
 // terminate the program with log.Fatal if diagram creation or rendering fails.
 func generateComponentDiagram() {
-	d, err := diagram.New(diagram.Filename("components"), diagram.Label("Golang Starter Components"), diagram.Direction("LR"))
+	d, err := diagram.New(diagram.Filename("components"), diagram.Label("go-find-goodwill Components"), diagram.Direction("LR"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Main components
 	main := programming.Language.Go(diagram.NodeLabel("main.go"))
-	rootCmd := programming.Language.Go(diagram.NodeLabel("cmd/golang-starter\nroot.go"))
+	rootCmd := programming.Language.Go(diagram.NodeLabel("cmd/go-find-goodwill\nroot.go"))
 	config := programming.Language.Go(diagram.NodeLabel("pkg/config\nconfig.go"))
-	starter := programming.Language.Go(diagram.NodeLabel("internal/starter\nstarter.go"))
 	version := programming.Language.Go(diagram.NodeLabel("pkg/version\nversion.go"))
 	man := programming.Language.Go(diagram.NodeLabel("pkg/man\nman.go"))
+
+	// Web server components
+	webMain := programming.Language.Go(diagram.NodeLabel("internal/goodwill/web\nmain.go"))
+	apiHandlers := programming.Language.Go(diagram.NodeLabel("internal/goodwill/web/api\n*_handlers.go"))
+	uiHandlers := programming.Language.Go(diagram.NodeLabel("internal/goodwill/web/ui\nhandler.go"))
+
+	// Core service components
+	searchManager := programming.Language.Go(diagram.NodeLabel("internal/goodwill/core\nsearch_manager.go"))
+	deduplication := programming.Language.Go(diagram.NodeLabel("internal/goodwill/core/deduplication\ndeduplication.go"))
+	scheduling := programming.Language.Go(diagram.NodeLabel("internal/goodwill/core/scheduling\nscheduler.go"))
+
+	// Database components
+	gormDB := programming.Language.Go(diagram.NodeLabel("internal/goodwill/db\ngorm_db.go"))
+	repository := programming.Language.Go(diagram.NodeLabel("internal/goodwill/db\ngorm_repository.go"))
+
+	// Notification components
+	notificationService := programming.Language.Go(diagram.NodeLabel("internal/goodwill/notifications\nnotification_service.go"))
+
+	// Anti-bot components
+	antiBotManager := programming.Language.Go(diagram.NodeLabel("internal/goodwill/antibot\nantibot.go"))
+	rateLimiter := programming.Language.Go(diagram.NodeLabel("internal/goodwill/antibot\nrate_limiter.go"))
+	timingManager := programming.Language.Go(diagram.NodeLabel("internal/goodwill/antibot\ntiming_manager.go"))
+
+	// API client component
+	apiClient := programming.Language.Go(diagram.NodeLabel("internal/goodwill/api\nclient.go"))
 
 	// Create connections showing the flow
 	d.Connect(main, rootCmd, diagram.Forward())
 	d.Connect(rootCmd, config, diagram.Forward())
-	d.Connect(rootCmd, starter, diagram.Forward())
 	d.Connect(rootCmd, version, diagram.Forward())
 	d.Connect(rootCmd, man, diagram.Forward())
+	d.Connect(rootCmd, webMain, diagram.Forward())
+
+	// Web server connections
+	d.Connect(webMain, apiHandlers, diagram.Forward())
+	d.Connect(webMain, uiHandlers, diagram.Forward())
+
+	// Core service connections
+	d.Connect(webMain, searchManager, diagram.Forward())
+	d.Connect(searchManager, deduplication, diagram.Forward())
+	d.Connect(searchManager, scheduling, diagram.Forward())
+	d.Connect(searchManager, apiClient, diagram.Forward())
+
+	// Database connections
+	d.Connect(webMain, gormDB, diagram.Forward())
+	d.Connect(gormDB, repository, diagram.Forward())
+	d.Connect(searchManager, repository, diagram.Forward())
+
+	// Notification connections
+	d.Connect(webMain, notificationService, diagram.Forward())
+	d.Connect(searchManager, notificationService, diagram.Forward())
+
+	// Anti-bot connections
+	d.Connect(apiClient, antiBotManager, diagram.Forward())
+	d.Connect(antiBotManager, rateLimiter, diagram.Forward())
+	d.Connect(antiBotManager, timingManager, diagram.Forward())
 
 	if err := d.Render(); err != nil {
 		log.Fatal(err)

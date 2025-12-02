@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>go-find-goodwill - {{.Title}}</title>
+    <link href="/static/css/tailwind.css" rel="stylesheet">
+    <script defer src="/static/js/alpine.js"></script>
+    <script defer src="/static/js/api.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow">
+            <div class="p-4">
+                <h1 class="text-xl font-bold">go-find-goodwill</h1>
+            </div>
+            <nav class="mt-4">
+                <a href="/dashboard" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</a>
+                <a href="/searches" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Searches</a>
+                <a href="/items" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Items</a>
+                <a href="/notifications" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Notifications</a>
+                <a href="/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Settings</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            {{template "content" .}}
+        </main>
+    </div>
+
+    <!-- Flash Messages -->
+    <div id="flash-messages" class="fixed top-4 right-4 space-y-2">
+        {{range .FlashMessages}}
+        <div class="bg-{{.Type}}-100 border border-{{.Type}}-400 text-{{.Type}}-700 px-4 py-3 rounded">
+            {{.Message}}
+        </div>
+        {{end}}
+    </div>
+
+    <script>
+        // Auto-dismiss flash messages
+        setTimeout(() => {
+            document.getElementById('flash-messages').style.display = 'none';
+        }, 5000);
+    </script>
+</body>
+</html>

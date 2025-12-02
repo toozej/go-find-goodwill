@@ -1,5 +1,5 @@
 # Cosign
-golang-starter.key
+go-find-goodwill.key
 cosign.key
 *.sig
 
@@ -13,6 +13,9 @@ cosign.key
 *.so
 *.dylib
 out/
+
+# Test database files
+test_*.db
 
 # Test binary, built with `go test -c`
 *.test
@@ -36,3 +39,4 @@ prompt.md
 TASKS.md
 .kiro/
 .kilocode/
+pr-reviews*.md

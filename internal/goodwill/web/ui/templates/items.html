@@ -1,0 +1,150 @@
+{{define "items.html"}}
+{{template "base.html" .}}
+
+{{define "content"}}
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold">Item Management</h1>
+
+    <!-- Filter Controls -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Filters</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="form-group">
+                <label for="status-filter">Status</label>
+                <select id="status-filter" class="w-full p-2 border rounded">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="ended">Ended</option>
+                    <option value="won">Won</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="category-filter">Category</label>
+                <input type="text" id="category-filter" placeholder="Filter by category" class="w-full p-2 border rounded">
+            </div>
+
+            <div class="form-group">
+                <label for="price-range">Price Range</label>
+                <div class="flex space-x-2">
+                    <input type="number" placeholder="Min" class="w-1/2 p-2 border rounded">
+                    <input type="number" placeholder="Max" class="w-1/2 p-2 border rounded">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end mt-4">
+            <button id="apply-filters" class="btn btn-primary">Apply Filters</button>
+            <button id="reset-filters" class="btn btn-secondary ml-2">Reset</button>
+        </div>
+    </div>
+
+    <!-- Items List -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Items</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left p-2">Title</th>
+                        <th class="text-left p-2">Price</th>
+                        <th class="text-left p-2">Ends At</th>
+                        <th class="text-left p-2">Status</th>
+                        <th class="text-left p-2">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="items-table">
+                    <tr>
+                        <td colspan="5" class="text-center p-4">Loading items...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const api = new GoodwillAPI();
+    const itemsTable = document.getElementById('items-table');
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+
+    let currentItems = [];
+
+    // Load items
+    async function loadItems(filters = {}) {
+        try {
+            const response = await api.getItems(filters);
+            currentItems = response.items || [];
+            renderItemsTable();
+        } catch (error) {
+            console.error('Failed to load items:', error);
+            itemsTable.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-danger">Failed to load items</td></tr>';
+        }
+    }
+
+    // Render items table
+    function renderItemsTable() {
+        if (currentItems.length === 0) {
+            itemsTable.innerHTML = '<tr><td colspan="5" class="text-center p-4">No items found</td></tr>';
+            return;
+        }
+
+        itemsTable.innerHTML = '';
+        currentItems.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'border-b hover:bg-gray-50';
+
+            row.innerHTML = `
+                <td class="p-2">
+                    <a href="/items/${item.id}" class="text-blue-600 hover:underline">${item.title}</a>
+                    <div class="text-sm text-gray-500">${item.category}</div>
+                </td>
+                <td class="p-2">
+                    <div class="font-bold">$${item.current_price.toFixed(2)}</div>
+                    ${item.buy_now_price ? `<div class="text-sm text-gray-500">Buy Now: $${item.buy_now_price.toFixed(2)}</div>` : ''}
+                </td>
+                <td class="p-2">${item.ends_at || 'N/A'}</td>
+                <td class="p-2">
+                    <span class="badge ${item.status === 'active' ? 'badge-success' : 'badge-danger'}">
+                        ${item.status}
+                    </span>
+                </td>
+                <td class="p-2">
+                    <button class="btn btn-secondary btn-sm view-item" data-id="${item.id}">View</button>
+                </td>
+            `;
+
+            itemsTable.appendChild(row);
+        });
+    }
+
+    // Apply filters
+    function applyFilters() {
+        const filters = {
+            status: document.getElementById('status-filter').value,
+            category: document.getElementById('category-filter').value,
+            limit: 20,
+            offset: 0
+        };
+
+        loadItems(filters);
+    }
+
+    // Reset filters
+    function resetFilters() {
+        document.getElementById('status-filter').value = '';
+        document.getElementById('category-filter').value = '';
+        loadItems();
+    }
+
+    // Event listeners
+    applyFiltersBtn.addEventListener('click', applyFilters);
+    resetFiltersBtn.addEventListener('click', resetFilters);
+
+    // Load initial data
+    loadItems();
+});
+</script>
+{{end}}

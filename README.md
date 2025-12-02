@@ -1,56 +1,51 @@
-# golang-starter
+# go-find-goodwill
 
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/toozej/golang-starter)
-[![Go Report Card](https://goreportcard.com/badge/github.com/toozej/golang-starter)](https://goreportcard.com/report/github.com/toozej/golang-starter)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/toozej/golang-starter/cicd.yaml)
-![Docker Pulls](https://img.shields.io/docker/pulls/toozej/golang-starter)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/toozej/golang-starter/total)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/toozej/go-find-goodwill)
+[![Go Report Card](https://goreportcard.com/badge/github.com/toozej/go-find-goodwill)](https://goreportcard.com/report/github.com/toozej/go-find-goodwill)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/toozej/go-find-goodwill/cicd.yaml)
+![Docker Pulls](https://img.shields.io/docker/pulls/toozej/go-find-goodwill)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/toozej/go-find-goodwill/total)
 
-Golang starter template
+## Database Migration to GORM
 
-## features of this starter template
-- follows common Golang best practices in terms of repo/project layout, and includes explanations of what goes where in README files
-- Cobra library for CLI handling, Logrus for logging, and GoDotEnv and Env libraries for reading config files already plugged in and ready to expand upon
-- Goreleaser to build Docker images and most standard package types across Linux, MacOS and Windows
-    - also includes auto-generated manpages and shell autocompletions
-- Makefile for easy building, deploying, testing, updating, etc. both Dockerized and using locally installed Golang toolchain
-- docker-compose project for easily hosting built Dockerized Golang project, with optional support for Golang web services
-- scripts to make using the starter template easy, and to update the Golang version when a new one comes out
-- Dev Container with built in Go-related VSCode extensions, and [llm](https://llm.datasette.io/) tool + plugins pre-configured to use GitHub Copilot
-- built-in security scans, vulnerability warnings and auto-updates via Dependabot and GitHub Actions
-- auto-generated documentation
-- pre-commit hooks for ensuring formatting, linting, security checks, etc.
+The go-find-goodwill application has transitioned from file-based SQL migrations to GORM's AutoMigrate system, providing automatic schema management and ORM capabilities.
 
-## changes required to use this as a starter template
-- generate a GitHub fine-grained access token from https://github.com/settings/tokens?type=beta (used in repo as "GITHUB_TOKEN" and in GitHub Actions Secrets as "GH_TOKEN") with the following read/write permissions:
-    - actions
-    - attestations
-    - code scanning alerts
-    - commit statuses
-    - contents
-    - dependabot alerts
-    - dependabot secrets
-    - deployments
-    - environments
-    - issues
-    - pages
-    - pull requests
-    - repository security advisories
-    - secret scanning alerts
-    - secrets
-    - webhooks
-    - workflows
-- run `use_starter.sh` script to rename project files, generate Cosign artifacts, gather and upload secrets to GitHub Actions, etc.
-    - run `./scripts/use_starter.sh $NEW_PROJECT_NAME_GOES_HERE`
-    - to rename with a different GitHub username `./scripts/use_starter.sh $NEW_PROJECT_NAME_GOES_HERE $GITHUB_USERNAME_GOES_HERE`
+### Key Changes
+
+- **GORM ORM**: Full ORM support with struct-based schema definition
+- **AutoMigrate**: Automatic table creation and schema updates
+- **Transaction Support**: Built-in transaction management
+- **Relationship Management**: Automatic handling of one-to-many and many-to-many relationships
+- **Improved Developer Experience**: Type-safe queries and better error handling
+
+### Documentation
+
+For comprehensive GORM implementation details:
+
+- **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)**: Complete GORM schema specification
+- **[GORM_USAGE_GUIDE.md](GORM_USAGE_GUIDE.md)**: Usage patterns and best practices
+- **[internal/goodwill/db/README.md](internal/goodwill/db/README.md)**: Database layer documentation
+
+### Migration Guide
+
+The application now uses GORM for all database operations:
+
+1. **Schema Definition**: Models defined as Go structs with GORM tags
+2. **Automatic Migrations**: `AutoMigrate()` handles schema creation and updates
+3. **Transaction Support**: Built-in transaction patterns for data integrity
+4. **Legacy Compatibility**: Conversion functions for backward compatibility
+
+### Setup Instructions
+
 - set up new repository in quay.io web console
-    - (DockerHub and GitHub Container Registry do this automatically on first push/publish)
-    - name must match Git repo name
-    - grant robot user with username stored in QUAY_USERNAME "write" permissions (your quay.io account should already have admin permissions)
+  - (DockerHub and GitHub Container Registry do this automatically on first push/publish)
+  - name must match Git repo name
+  - grant robot user with username stored in QUAY_USERNAME "write" permissions (your quay.io account should already have admin permissions)
 - set built packages visibility in GitHub packages to public
-    - navigate to https://github.com/users/$USERNAME/packages/container/$REPO/settings
-    - scroll down to "Danger Zone"
-    - change visibility to public
+  - navigate to https://github.com/users/$USERNAME/packages/container/$REPO/settings
+  - scroll down to "Danger Zone"
+  - change visibility to public
 
 ## changes required to update golang version
+
 - `make update-golang-version`

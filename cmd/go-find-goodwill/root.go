@@ -1,8 +1,8 @@
-// Package cmd provides command-line interface functionality for the golang-starter application.
+// Package cmd provides command-line interface functionality for the go-find-goodwill application.
 //
 // This package implements the root command and manages the command-line interface
 // using the cobra library. It handles configuration, logging setup, and command
-// execution for the golang-starter template application.
+// execution for the go-find-goodwill template application.
 //
 // The package integrates with several components:
 //   - Configuration management through pkg/config
@@ -12,7 +12,7 @@
 //
 // Example usage:
 //
-//	import "github.com/toozej/golang-starter/cmd/golang-starter"
+//	import "github.com/toozej/go-find-goodwill/cmd/go-find-goodwill"
 //
 //	func main() {
 //		cmd.Execute()
@@ -26,10 +26,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/toozej/golang-starter/internal/starter"
-	"github.com/toozej/golang-starter/pkg/config"
-	"github.com/toozej/golang-starter/pkg/man"
-	"github.com/toozej/golang-starter/pkg/version"
+	"github.com/toozej/go-find-goodwill/internal/goodwill/web"
+	"github.com/toozej/go-find-goodwill/pkg/config"
+	"github.com/toozej/go-find-goodwill/pkg/man"
+	"github.com/toozej/go-find-goodwill/pkg/version"
 )
 
 // conf holds the application configuration loaded from environment variables.
@@ -41,7 +41,7 @@ var (
 	debug bool
 )
 
-// rootCmd defines the base command for the golang-starter CLI application.
+// rootCmd defines the base command for the go-find-goodwill CLI application.
 // It serves as the entry point for all command-line operations and establishes
 // the application's structure, flags, and subcommands.
 //
@@ -49,7 +49,7 @@ var (
 // to the starter package. It supports persistent flags that are inherited by
 // all subcommands.
 var rootCmd = &cobra.Command{
-	Use:              "golang-starter",
+	Use:              "go-find-goodwill",
 	Short:            "golang starter template",
 	Long:             `Golang starter template using cobra, logrus, dotenv and env modules`,
 	Args:             cobra.ExactArgs(0),
@@ -64,7 +64,7 @@ var rootCmd = &cobra.Command{
 //   - cmd: The cobra command being executed
 //   - args: Command-line arguments (unused, as root command takes no args)
 func rootCmdRun(cmd *cobra.Command, args []string) {
-	starter.Run(conf.Username)
+	web.RunWebServer(conf)
 }
 
 // rootCmdPreRun performs setup operations before executing the root command.
@@ -114,13 +114,10 @@ func Execute() {
 // allows overriding the username from environment variables.
 func init() {
 	// get configuration from environment variables
-	conf = config.GetEnvVars()
+	conf, _ = config.GetEnvVars()
 
 	// create rootCmd-level flags
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Enable debug-level logging")
-
-	// optional flag for username, overrides env var
-	rootCmd.Flags().StringVarP(&conf.Username, "username", "u", conf.Username, "Username")
 
 	// add sub-commands
 	rootCmd.AddCommand(

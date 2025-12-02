@@ -1,0 +1,374 @@
+{{define "searches.html"}}
+{{template "base.html" .}}
+
+{{define "content"}}
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold">Search Management</h1>
+
+    <!-- Search Controls -->
+    <div class="flex justify-between items-center">
+        <button id="add-search-btn" class="btn btn-primary">
+            <span class="mr-2">+</span> Add Search
+        </button>
+        <div class="flex space-x-2">
+            <button id="refresh-btn" class="btn btn-secondary">
+                <span class="mr-2">🔄</span> Refresh
+            </button>
+            <button id="execute-all-btn" class="btn btn-success">
+                <span class="mr-2">▶</span> Execute All
+            </button>
+        </div>
+    </div>
+
+    <!-- Search List -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Active Searches</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left p-2">Name</th>
+                        <th class="text-left p-2">Query</th>
+                        <th class="text-left p-2">Status</th>
+                        <th class="text-left p-2">Last Checked</th>
+                        <th class="text-left p-2">Items Found</th>
+                        <th class="text-left p-2">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="searches-table">
+                    <tr>
+                        <td colspan="6" class="text-center p-4">Loading searches...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Search Details Modal -->
+    <div id="search-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden" style="z-index: 1000;">
+        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold" id="modal-title">Search Details</h2>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                    <span class="text-2xl">×</span>
+                </button>
+            </div>
+
+            <form id="search-form" class="space-y-4">
+                <input type="hidden" id="search-id" name="id">
+
+                <div class="form-group">
+                    <label for="search-name">Name</label>
+                    <input type="text" id="search-name" name="name" required class="w-full p-2 border rounded">
+                </div>
+
+                <div class="form-group">
+                    <label for="search-query">Query</label>
+                    <input type="text" id="search-query" name="query" required class="w-full p-2 border rounded">
+                </div>
+
+                <div class="form-group">
+                    <label for="search-regex">Regex Pattern (Optional)</label>
+                    <input type="text" id="search-regex" name="regex_pattern" class="w-full p-2 border rounded">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="search-enabled">Enabled</label>
+                        <select id="search-enabled" name="enabled" class="w-full p-2 border rounded">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="search-threshold">Notification Threshold (Days)</label>
+                        <input type="number" id="search-threshold" name="notification_threshold_days" min="1" value="1" class="w-full p-2 border rounded">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="search-min-price">Min Price</label>
+                        <input type="number" id="search-min-price" name="min_price" step="0.01" class="w-full p-2 border rounded">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="search-max-price">Max Price</label>
+                        <input type="number" id="search-max-price" name="max_price" step="0.01" class="w-full p-2 border rounded">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="search-category">Category Filter</label>
+                    <input type="text" id="search-category" name="category_filter" class="w-full p-2 border rounded">
+                </div>
+
+                <div class="form-group">
+                    <label for="search-seller">Seller Filter</label>
+                    <input type="text" id="search-seller" name="seller_filter" class="w-full p-2 border rounded">
+                </div>
+
+                <div class="form-group">
+                    <label for="search-sort">Sort By</label>
+                    <select id="search-sort" name="sort_by" class="w-full p-2 border rounded">
+                        <option value="ends_soonest">Ends Soonest</option>
+                        <option value="newest">Newest</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" id="delete-search-btn" class="btn btn-danger hidden">
+                        Delete
+                    </button>
+                    <button type="button" id="cancel-btn" class="btn btn-secondary">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const api = new GoodwillAPI();
+    let currentSearches = [];
+    let currentSearchID = null;
+
+    // DOM elements
+    const searchesTable = document.getElementById('searches-table');
+    const addSearchBtn = document.getElementById('add-search-btn');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const executeAllBtn = document.getElementById('execute-all-btn');
+    const searchModal = document.getElementById('search-modal');
+    const closeModal = document.getElementById('close-modal');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const searchForm = document.getElementById('search-form');
+    const deleteSearchBtn = document.getElementById('delete-search-btn');
+    const modalTitle = document.getElementById('modal-title');
+
+    // Load searches
+    async function loadSearches() {
+        try {
+            const response = await api.getSearches();
+            currentSearches = response.searches || [];
+            renderSearchesTable();
+        } catch (error) {
+            console.error('Failed to load searches:', error);
+            searchesTable.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-danger">Failed to load searches</td></tr>';
+        }
+    }
+
+    // Render searches table
+    function renderSearchesTable() {
+        if (currentSearches.length === 0) {
+            searchesTable.innerHTML = '<tr><td colspan="6" class="text-center p-4">No searches found</td></tr>';
+            return;
+        }
+
+        searchesTable.innerHTML = '';
+        currentSearches.forEach(search => {
+            const row = document.createElement('tr');
+            row.className = 'border-b hover:bg-gray-50';
+
+            row.innerHTML = `
+                <td class="p-2">${search.name}</td>
+                <td class="p-2">${search.query}</td>
+                <td class="p-2">
+                    <span class="badge ${search.enabled ? 'badge-success' : 'badge-danger'}">
+                        ${search.enabled ? 'Active' : 'Disabled'}
+                    </span>
+                </td>
+                <td class="p-2">${search.last_checked || 'Never'}</td>
+                <td class="p-2">0</td>
+                <td class="p-2">
+                    <button class="btn btn-secondary btn-sm view-search" data-id="${search.id}">View</button>
+                    <button class="btn btn-success btn-sm execute-search" data-id="${search.id}">Execute</button>
+                </td>
+            `;
+
+            searchesTable.appendChild(row);
+        });
+
+        // Add event listeners to buttons
+        document.querySelectorAll('.view-search').forEach(btn => {
+            btn.addEventListener('click', () => viewSearch(btn.dataset.id));
+        });
+
+        document.querySelectorAll('.execute-search').forEach(btn => {
+            btn.addEventListener('click', () => executeSearch(btn.dataset.id));
+        });
+    }
+
+    // View search details
+    async function viewSearch(id) {
+        try {
+            const search = currentSearches.find(s => s.id == id);
+            if (!search) return;
+
+            currentSearchID = id;
+            modalTitle.textContent = 'Edit Search';
+            deleteSearchBtn.classList.remove('hidden');
+
+            // Populate form
+            document.getElementById('search-id').value = search.id;
+            document.getElementById('search-name').value = search.name;
+            document.getElementById('search-query').value = search.query;
+            document.getElementById('search-regex').value = search.regex_pattern || '';
+            document.getElementById('search-enabled').value = search.enabled;
+            document.getElementById('search-threshold').value = search.notification_threshold_days;
+            document.getElementById('search-min-price').value = search.min_price || '';
+            document.getElementById('search-max-price').value = search.max_price || '';
+            document.getElementById('search-category').value = search.category_filter || '';
+            document.getElementById('search-seller').value = search.seller_filter || '';
+            document.getElementById('search-sort').value = search.sort_by || 'ends_soonest';
+
+            searchModal.classList.remove('hidden');
+        } catch (error) {
+            console.error('Failed to view search:', error);
+        }
+    }
+
+    // Execute search
+    async function executeSearch(id) {
+        try {
+            const response = await api.executeSearch(id);
+            showFlashMessage('success', `Search execution queued: ${response.message}`);
+        } catch (error) {
+            console.error('Failed to execute search:', error);
+            showFlashMessage('danger', 'Failed to execute search');
+        }
+    }
+
+    // Add new search
+    function addNewSearch() {
+        currentSearchID = null;
+        modalTitle.textContent = 'Add New Search';
+        deleteSearchBtn.classList.add('hidden');
+
+        // Clear form
+        searchForm.reset();
+        document.getElementById('search-threshold').value = 1;
+
+        searchModal.classList.remove('hidden');
+    }
+
+    // Save search
+    async function saveSearch(e) {
+        e.preventDefault();
+
+        const formData = new FormData(searchForm);
+        const searchData = {
+            name: formData.get('name'),
+            query: formData.get('query'),
+            regex_pattern: formData.get('regex_pattern'),
+            enabled: formData.get('enabled') === 'true',
+            notification_threshold_days: parseInt(formData.get('notification_threshold_days')) || 1,
+            min_price: formData.get('min_price') ? parseFloat(formData.get('min_price')) : null,
+            max_price: formData.get('max_price') ? parseFloat(formData.get('max_price')) : null,
+            category_filter: formData.get('category_filter'),
+            seller_filter: formData.get('seller_filter'),
+            shipping_filter: formData.get('shipping_filter'),
+            condition_filter: formData.get('condition_filter'),
+            sort_by: formData.get('sort_by')
+        };
+
+        try {
+            if (currentSearchID) {
+                // Update existing search
+                await api.updateSearch(currentSearchID, searchData);
+                showFlashMessage('success', 'Search updated successfully');
+            } else {
+                // Create new search
+                await api.createSearch(searchData);
+                showFlashMessage('success', 'Search created successfully');
+            }
+
+            // Refresh the list
+            await loadSearches();
+            searchModal.classList.add('hidden');
+        } catch (error) {
+            console.error('Failed to save search:', error);
+            showFlashMessage('danger', 'Failed to save search');
+        }
+    }
+
+    // Delete search
+    async function deleteSearch() {
+        if (!currentSearchID) return;
+
+        if (!confirm('Are you sure you want to delete this search?')) return;
+
+        try {
+            await api.deleteSearch(currentSearchID);
+            showFlashMessage('success', 'Search deleted successfully');
+            searchModal.classList.add('hidden');
+            await loadSearches();
+        } catch (error) {
+            console.error('Failed to delete search:', error);
+            showFlashMessage('danger', 'Failed to delete search');
+        }
+    }
+
+    // Execute all searches
+    async function executeAllSearches() {
+        if (!confirm('Are you sure you want to execute all active searches?')) return;
+
+        try {
+            const activeSearches = currentSearches.filter(s => s.enabled);
+            let successCount = 0;
+
+            for (const search of activeSearches) {
+                try {
+                    await api.executeSearch(search.id);
+                    successCount++;
+                } catch (error) {
+                    console.error(`Failed to execute search ${search.id}:`, error);
+                }
+            }
+
+            showFlashMessage('success', `Executed ${successCount} of ${activeSearches.length} searches`);
+        } catch (error) {
+            console.error('Failed to execute searches:', error);
+            showFlashMessage('danger', 'Failed to execute searches');
+        }
+    }
+
+    // Show flash message
+    function showFlashMessage(type, message) {
+        const flashContainer = document.getElementById('flash-messages');
+        const flashMsg = document.createElement('div');
+        flashMsg.className = `bg-${type}-100 border border-${type}-400 text-${type}-700 px-4 py-3 rounded`;
+        flashMsg.textContent = message;
+
+        flashContainer.appendChild(flashMsg);
+        setTimeout(() => flashMsg.remove(), 5000);
+    }
+
+    // Event listeners
+    addSearchBtn.addEventListener('click', addNewSearch);
+    refreshBtn.addEventListener('click', loadSearches);
+    executeAllBtn.addEventListener('click', executeAllSearches);
+    closeModal.addEventListener('click', () => searchModal.classList.add('hidden'));
+    cancelBtn.addEventListener('click', () => searchModal.classList.add('hidden'));
+    searchForm.addEventListener('submit', saveSearch);
+    deleteSearchBtn.addEventListener('click', deleteSearch);
+
+    // Close modal when clicking outside
+    searchModal.addEventListener('click', (e) => {
+        if (e.target === searchModal) {
+            searchModal.classList.add('hidden');
+        }
+    });
+
+    // Load initial data
+    loadSearches();
+});
+</script>
+{{end}}

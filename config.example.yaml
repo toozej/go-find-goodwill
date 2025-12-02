@@ -1,0 +1,130 @@
+---
+# Example configuration file for go-find-goodwill application
+# This file contains all available configuration options with their default values
+
+# ShopGoodwill API configuration
+shopgoodwill:
+  username: "your_goodwill_username"          # ShopGoodwill username
+  password: "your_goodwill_password"          # ShopGoodwill password
+  api_base_url: "https://api.shopgoodwill.com" # ShopGoodwill API base URL
+  max_retries: 3                              # Maximum number of retry attempts
+  request_timeout: 30s                       # Request timeout duration
+
+# Search configuration
+search:
+  interval_minutes: 15                        # Search interval in minutes
+  min_interval: 5                             # Minimum search interval
+  max_interval: 1440                          # Maximum search interval (24 hours)
+  notification_threshold_days: 1              # Notification threshold in days
+  enable_regex_searches: false                # Enable regex-based searches
+  concurrency: 3                              # Number of concurrent search workers
+
+# Notification configuration
+notification:
+  # Gotify notification configuration
+  gotify:
+    enabled: false                            # Enable Gotify notifications
+    url: ""                                   # Gotify server URL
+    token: ""                                 # Gotify application token
+    priority: 5                               # Notification priority (1-10)
+
+
+  # Slack notification configuration
+  slack:
+    enabled: false                            # Enable Slack notifications
+    token: ""                                 # Slack API token
+    channel_id: ""                            # Slack channel ID
+
+  # Telegram notification configuration
+  telegram:
+    enabled: false                            # Enable Telegram notifications
+    token: ""                                 # Telegram bot token
+    chat_id: ""                               # Telegram chat ID
+
+  # Discord notification configuration
+  discord:
+    enabled: false                            # Enable Discord notifications
+    token: ""                                 # Discord bot token
+    channel_id: ""                            # Discord channel ID
+
+  # Pushover notification configuration
+  pushover:
+    enabled: false                            # Enable Pushover notifications
+    token: ""                                 # Pushover API token
+    recipient_id: ""                          # Pushover recipient ID
+
+  # Pushbullet notification configuration
+  pushbullet:
+    enabled: false                            # Enable Pushbullet notifications
+    token: ""                                 # Pushbullet API token
+    device_nickname: ""                       # Pushbullet device nickname
+
+# Web server configuration
+web:
+  enabled: false                              # Enable web server
+  host: "0.0.0.0"                             # Web server host
+  port: 8080                                  # Web server port
+  static_dir: "web/static"                    # Static files directory
+  template_dir: "web/templates"              # Template files directory
+  read_timeout: 30s                           # HTTP read timeout
+  write_timeout: 30s                          # HTTP write timeout
+  idle_timeout: 120s                          # HTTP idle timeout
+
+  # TLS configuration
+  tls:
+    enabled: false                            # Enable TLS
+    cert_file: ""                             # TLS certificate file path
+    key_file: ""                              # TLS key file path
+
+# Database configuration
+database:
+  path: "./goodwill.db"                       # Database file path
+  max_connections: 10                         # Maximum database connections
+  max_idle_connections: 5                     # Maximum idle database connections
+  connection_timeout: 30s                     # Database connection timeout
+  conn_max_lifetime: 30m                      # Maximum connection lifetime
+  conn_max_idle_time: 10m                     # Maximum connection idle time
+
+# Anti-bot configuration
+antibot:
+  # User agent rotation configuration
+  user_agent:
+    rotation_enabled: false                   # Enable user agent rotation
+    rotation_interval: 1h                     # User agent rotation interval
+    requests_per_ua: 20                       # Requests per user agent
+    min_success_rate: 0.8                      # Minimum success rate threshold
+
+  # Timing configuration for anti-bot measures
+  timing:
+    base_interval: 15m                         # Base interval between requests
+    min_jitter: 2m                             # Minimum jitter duration
+    max_jitter: 5m                             # Maximum jitter duration
+    human_like_variation: false                # Enable human-like timing variation
+    max_queue_size: 100                        # Maximum queue size for delayed requests
+
+  # Request throttling configuration
+  throttling:
+    requests_per_minute: 0                     # Requests per minute limit
+    burst_limit: 0                             # Burst limit for requests
+
+  # Retry configuration
+  retry:
+    max_retries: 3                             # Maximum number of retry attempts
+    base_delay: 1s                             # Base delay for retries
+    max_delay: 30s                             # Maximum delay for retries
+
+  # Circuit breaker configuration
+  circuit:
+    failure_threshold: 3                       # Failure threshold to open circuit
+    success_threshold: 2                       # Success threshold to close circuit
+    timeout: 30s                               # Timeout before attempting to close circuit
+    reset_timeout: 5m                          # Time to wait before resetting circuit breaker
+
+# Logging configuration
+logging:
+  level: "info"                                # Logging level (debug, info, warn, error)
+  format: "text"                               # Log format (text, json)
+  file: ""                                    # Log file path (empty for stdout)
+  max_size: 10                                # Maximum log file size in MB
+  max_backups: 3                              # Maximum number of log backups
+  max_age: 7                                  # Maximum log file age in days
