@@ -82,8 +82,8 @@ repos:
           "DL3062"]
 
   # lint Makefile
-  - repo: https://github.com/mrtazz/checkmake/
-    rev: 0.2.2
+  - repo: https://github.com/checkmake/checkmake
+    rev: v0.3.0
     hooks:
       - id: checkmake
         files: Makefile

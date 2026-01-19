@@ -228,7 +228,7 @@ homebrew_casks:
       name: homebrew-tap
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     manpages:
-      - "man/go-find-goodwill.1.gz"
+      - "manpages/go-find-goodwill.1.gz"
     completions:
       bash: "completions/go-find-goodwill.bash"
       zsh: "completions/go-find-goodwill.zsh"
