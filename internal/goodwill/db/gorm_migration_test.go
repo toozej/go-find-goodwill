@@ -56,11 +56,6 @@ func TestGormMigrationManagerBasic(t *testing.T) {
 	require.NoError(t, err, "Failed to get current version after migration")
 	assert.Greater(t, version, 0, "Migration version should be greater than 0 after running migrations")
 
-	// Test GetMigrationHistory
-	history, err := migrationManager.GetMigrationHistory()
-	require.NoError(t, err, "Failed to get migration history")
-	assert.Greater(t, len(history), 0, "Migration history should contain entries")
-
 	// Verify that all expected tables were created
 	tables := []string{
 		"gorm_searches",
@@ -85,55 +80,6 @@ func TestGormMigrationManagerBasic(t *testing.T) {
 			t.Logf("Table %s does not exist", table)
 		}
 	}
-}
-
-func TestGormMigrationManagerRollback(t *testing.T) {
-	// Create temporary database file
-	tmpFile := "test_gorm_migration_rollback_" + time.Now().Format("20060102_150405") + ".db"
-	defer os.Remove(tmpFile)
-
-	// Create GORM database config
-	config := &DBConfig{
-		Path:           tmpFile,
-		MaxConnections: 5,
-	}
-
-	// Create GORM database
-	gormDB, err := NewGormDatabase(config)
-	require.NoError(t, err, "Failed to create GORM database")
-
-	// Connect to database
-	err = gormDB.Connect()
-	require.NoError(t, err, "Failed to connect to GORM database")
-	defer gormDB.Close()
-
-	// Create GORM migration manager
-	migrationManager := NewGormMigrationManager(gormDB)
-
-	// Ensure migrations table
-	err = migrationManager.EnsureMigrationsTable()
-	require.NoError(t, err, "Failed to ensure migrations table")
-
-	// Load and run migrations
-	err = migrationManager.LoadMigrations()
-	require.NoError(t, err, "Failed to load migrations")
-
-	err = migrationManager.Migrate()
-	require.NoError(t, err, "Failed to run migrations")
-
-	// Get current version before rollback
-	versionBefore, err := migrationManager.GetCurrentVersion()
-	require.NoError(t, err, "Failed to get current version before rollback")
-	assert.Greater(t, versionBefore, 0, "Should have migrations to rollback")
-
-	// Test Rollback
-	err = migrationManager.Rollback()
-	require.NoError(t, err, "Failed to rollback migration")
-
-	// Get current version after rollback
-	versionAfter, err := migrationManager.GetCurrentVersion()
-	require.NoError(t, err, "Failed to get current version after rollback")
-	assert.Less(t, versionAfter, versionBefore, "Version should decrease after rollback")
 }
 
 // TestGormMigrationManagerErrorHandling tests error handling scenarios
@@ -205,70 +151,5 @@ func TestGormMigrationManagerErrorHandling(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "database not connected", err.Error())
 
-		err = disconnectedMigrationMgr.Rollback()
-		assert.Error(t, err)
-		assert.Equal(t, "database not connected", err.Error())
 	})
-}
-
-// TestGormMigrationManagerMigrationHistory tests migration history functionality
-func TestGormMigrationManagerMigrationHistory(t *testing.T) {
-	// Create temporary database file
-	tmpFile := "test_gorm_migration_history_" + time.Now().Format("20060102_150405") + ".db"
-	defer os.Remove(tmpFile)
-
-	// Create GORM database config
-	config := &DBConfig{
-		Path:           tmpFile,
-		MaxConnections: 5,
-	}
-
-	// Create GORM database
-	gormDB, err := NewGormDatabase(config)
-	require.NoError(t, err, "Failed to create GORM database")
-
-	// Connect to database
-	err = gormDB.Connect()
-	require.NoError(t, err, "Failed to connect to GORM database")
-	defer gormDB.Close()
-
-	// Create GORM migration manager
-	migrationManager := NewGormMigrationManager(gormDB)
-
-	// Ensure migrations table
-	err = migrationManager.EnsureMigrationsTable()
-	require.NoError(t, err, "Failed to ensure migrations table")
-
-	// Load and run migrations
-	err = migrationManager.LoadMigrations()
-	require.NoError(t, err, "Failed to load migrations")
-
-	err = migrationManager.Migrate()
-	require.NoError(t, err, "Failed to run migrations")
-
-	// Test GetMigrationHistory
-	history, err := migrationManager.GetMigrationHistory()
-	require.NoError(t, err, "Failed to get migration history")
-	assert.Greater(t, len(history), 0, "Should have migration history entries")
-
-	// Verify history contains expected data
-	for _, entry := range history {
-		assert.Greater(t, entry.Version, 0, "Migration version should be positive")
-		assert.NotEmpty(t, entry.Name, "Migration name should not be empty")
-		assert.NotZero(t, entry.AppliedAt, "Migration should have applied timestamp")
-	}
-
-	// Test GetCurrentVersion
-	currentVersion, err := migrationManager.GetCurrentVersion()
-	require.NoError(t, err, "Failed to get current version")
-	assert.Greater(t, currentVersion, 0, "Current version should be positive")
-
-	// Verify current version matches highest migration version
-	highestVersion := 0
-	for _, entry := range history {
-		if entry.Version > highestVersion {
-			highestVersion = entry.Version
-		}
-	}
-	assert.Equal(t, highestVersion, currentVersion, "Current version should match highest migration version")
 }

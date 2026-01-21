@@ -27,7 +27,6 @@ type Repository interface {
 	UpdateItem(ctx context.Context, item GormItem) error
 	GetItemsBySearchID(ctx context.Context, searchID int) ([]GormItem, error)
 	GetItemsFiltered(ctx context.Context, searchID *int, status *string, category *string, minPrice *float64, maxPrice *float64, limit int, offset int) ([]GormItem, int, error)
-	GetRecentItemsForDeduplication(ctx context.Context, maxAge time.Duration, limit int, offset int) ([]GormItem, int, error)
 
 	// Search history
 	AddSearchExecution(ctx context.Context, execution GormSearchExecution) (int, error)
@@ -53,12 +52,6 @@ type Repository interface {
 	GetAllNotifications(ctx context.Context) ([]GormNotification, error)
 	// Filtered notifications for efficient database operations
 	GetNotificationsFiltered(ctx context.Context, status *string, notificationType *string, limit int, offset int) ([]GormNotification, int, error)
-	// Stats methods for efficient database operations
-	GetTotalNotificationCount(ctx context.Context) (int, error)
-	GetPendingNotificationCount(ctx context.Context) (int, error)
-	GetProcessingNotificationCount(ctx context.Context) (int, error)
-	GetDeliveredNotificationCount(ctx context.Context) (int, error)
-	GetFailedNotificationCount(ctx context.Context) (int, error)
 	GetNotificationStats(ctx context.Context) (*NotificationCountStats, error)
 
 	// Anti-bot

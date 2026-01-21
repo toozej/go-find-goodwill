@@ -6,34 +6,6 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/toozej/go-find-goodwill)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/toozej/go-find-goodwill/total)
 
-## Database Migration to GORM
-
-The go-find-goodwill application has transitioned from file-based SQL migrations to GORM's AutoMigrate system, providing automatic schema management and ORM capabilities.
-
-### Key Changes
-
-- **GORM ORM**: Full ORM support with struct-based schema definition
-- **AutoMigrate**: Automatic table creation and schema updates
-- **Transaction Support**: Built-in transaction management
-- **Relationship Management**: Automatic handling of one-to-many and many-to-many relationships
-- **Improved Developer Experience**: Type-safe queries and better error handling
-
-### Documentation
-
-For comprehensive GORM implementation details:
-
-- **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)**: Complete GORM schema specification
-- **[GORM_USAGE_GUIDE.md](GORM_USAGE_GUIDE.md)**: Usage patterns and best practices
-- **[internal/goodwill/db/README.md](internal/goodwill/db/README.md)**: Database layer documentation
-
-### Migration Guide
-
-The application now uses GORM for all database operations:
-
-1. **Schema Definition**: Models defined as Go structs with GORM tags
-2. **Automatic Migrations**: `AutoMigrate()` handles schema creation and updates
-3. **Transaction Support**: Built-in transaction patterns for data integrity
-4. **Legacy Compatibility**: Conversion functions for backward compatibility
 
 ### Setup Instructions
 

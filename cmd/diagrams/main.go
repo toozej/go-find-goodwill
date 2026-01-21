@@ -144,8 +144,6 @@ func generateComponentDiagram() {
 	uiHandlers := programming.Language.Go(diagram.NodeLabel("internal/goodwill/web/ui\nhandler.go"))
 
 	// Core service components
-	searchManager := programming.Language.Go(diagram.NodeLabel("internal/goodwill/core\nsearch_manager.go"))
-	deduplication := programming.Language.Go(diagram.NodeLabel("internal/goodwill/core/deduplication\ndeduplication.go"))
 	scheduling := programming.Language.Go(diagram.NodeLabel("internal/goodwill/core/scheduling\nscheduler.go"))
 
 	// Database components
@@ -175,19 +173,17 @@ func generateComponentDiagram() {
 	d.Connect(webMain, uiHandlers, diagram.Forward())
 
 	// Core service connections
-	d.Connect(webMain, searchManager, diagram.Forward())
-	d.Connect(searchManager, deduplication, diagram.Forward())
-	d.Connect(searchManager, scheduling, diagram.Forward())
-	d.Connect(searchManager, apiClient, diagram.Forward())
+	d.Connect(webMain, scheduling, diagram.Forward())
+	d.Connect(scheduling, apiClient, diagram.Forward())
 
 	// Database connections
 	d.Connect(webMain, gormDB, diagram.Forward())
 	d.Connect(gormDB, repository, diagram.Forward())
-	d.Connect(searchManager, repository, diagram.Forward())
+	d.Connect(scheduling, repository, diagram.Forward())
 
 	// Notification connections
 	d.Connect(webMain, notificationService, diagram.Forward())
-	d.Connect(searchManager, notificationService, diagram.Forward())
+	d.Connect(scheduling, notificationService, diagram.Forward())
 
 	// Anti-bot connections
 	d.Connect(apiClient, antiBotManager, diagram.Forward())

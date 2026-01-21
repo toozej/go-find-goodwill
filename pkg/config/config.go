@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
-	"gopkg.in/yaml.v3"
 )
 
 // Config represents the complete application configuration structure.
@@ -292,99 +290,5 @@ func (c *Config) Validate() error {
 		}
 	}
 
-	return nil
-}
-
-// LoadYAMLConfig loads configuration from a YAML file and merges it with environment variables
-func LoadYAMLConfig(yamlPath string) (Config, error) {
-	// Validate the YAML file path
-	if yamlPath == "" {
-		return Config{}, fmt.Errorf("YAML file path cannot be empty")
-	}
-
-	path, err := filepath.Abs(yamlPath)
-	if err != nil {
-		return Config{}, fmt.Errorf("error resolving YAML file path: %w", err)
-	}
-
-	// Validate file extension
-	ext := strings.ToLower(filepath.Ext(path))
-	if ext != ".yaml" && ext != ".yml" {
-		return Config{}, fmt.Errorf("YAML file must have .yaml or .yml extension")
-	}
-
-	// Read and parse YAML
-	// We allow reading from any path provided by the caller/user
-	cleanPath := filepath.Clean(path)
-	yamlData, err := os.ReadFile(cleanPath)
-	if err != nil {
-		return Config{}, fmt.Errorf("error reading YAML file: %w", err)
-	}
-
-	var conf Config
-	// 1. Load Defaults and Environment Variables
-	// Use GetEnvVars to avoid side effects
-	envConf, err := GetEnvVars()
-	if err != nil {
-		return Config{}, fmt.Errorf("error loading environment variables: %w", err)
-	}
-	conf = envConf
-
-	// 2. Load YAML
-	var yamlConf Config
-	if err := yaml.Unmarshal(yamlData, &yamlConf); err != nil {
-		return Config{}, fmt.Errorf("error parsing YAML configuration: %w", err)
-	}
-
-	// 3. Merge YAML into conf (YAML overrides Defaults, but Env overrides YAML)
-	if err := mergeConfigStructs(&conf, &yamlConf); err != nil {
-		return Config{}, fmt.Errorf("error merging configurations: %w", err)
-	}
-
-	return conf, nil
-}
-
-// mergeConfigStructs merges yamlConf into conf, respecting Env > YAML > Defaults precedence.
-// conf contains (Defaults + Env). yamlConf contains YAML.
-// We overwrite conf with yamlConf value ONLY if:
-// 1. yamlConf value is non-zero (present in YAML)
-// 2. AND the corresponding Env Var is NOT set (so conf has Default, which YAML should override).
-func mergeConfigStructs(conf, yamlConf interface{}) error {
-	vConf := reflect.ValueOf(conf).Elem()
-	vYaml := reflect.ValueOf(yamlConf).Elem()
-	tConf := vConf.Type()
-
-	for i := 0; i < vConf.NumField(); i++ {
-		fieldConf := vConf.Field(i)
-		fieldYaml := vYaml.Field(i)
-		fieldType := tConf.Field(i)
-
-		// Handle nested structs recursively
-		if fieldConf.Kind() == reflect.Struct {
-			if err := mergeConfigStructs(fieldConf.Addr().Interface(), fieldYaml.Addr().Interface()); err != nil {
-				return err
-			}
-			continue
-		}
-
-		// Get environment variable name from tag
-		envTag := fieldType.Tag.Get("env")
-		// Clean tag options (e.g. "NAME,required")
-		envVar := strings.Split(envTag, ",")[0]
-
-		// Check if YAML has a value
-		if !fieldYaml.IsZero() {
-			// Check if Env Var is set
-			envSet := false
-			if envVar != "" {
-				_, envSet = os.LookupEnv(envVar)
-			}
-
-			// If Env Var is NOT set, YAML wins (overrides Default)
-			if !envSet {
-				fieldConf.Set(fieldYaml)
-			}
-		}
-	}
 	return nil
 }

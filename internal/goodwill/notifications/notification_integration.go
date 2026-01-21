@@ -161,20 +161,6 @@ func (ni *NotificationIntegration) QueueNotification(ctx context.Context, notifi
 	return ni.worker.QueueNotificationForProcessing(ctx, notification)
 }
 
-// QueueNotificationForNewSystem queues a notification for processing using the new system
-func (ni *NotificationIntegration) QueueNotificationForNewSystem(ctx context.Context, item *db.GormItem, search *db.GormSearch) error {
-	notification := db.GormNotification{
-		ItemID:           item.ID,
-		SearchID:         search.ID,
-		NotificationType: "new_system",
-		Status:           "queued",
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-	}
-
-	return ni.QueueNotification(ctx, notification)
-}
-
 // GetNotificationStats returns statistics about notification processing
 func (ni *NotificationIntegration) GetNotificationStats(ctx context.Context) (map[string]interface{}, error) {
 	return ni.worker.GetNotificationStats(ctx)

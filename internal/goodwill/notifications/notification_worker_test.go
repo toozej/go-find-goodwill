@@ -397,39 +397,8 @@ func (m *MockRepositoryForWorker) GetSearchesFiltered(ctx context.Context, enabl
 	return []db.GormSearch{}, 0, nil
 }
 
-// GetDeliveredNotificationCount implements Repository.GetDeliveredNotificationCount
-func (m *MockRepositoryForWorker) GetDeliveredNotificationCount(ctx context.Context) (int, error) {
-	return 1, nil
-}
-
-// GetFailedNotificationCount implements Repository.GetFailedNotificationCount
-func (m *MockRepositoryForWorker) GetFailedNotificationCount(ctx context.Context) (int, error) {
-	return 1, nil
-}
-
-// GetNotificationsFiltered implements Repository.GetNotificationsFiltered
 func (m *MockRepositoryForWorker) GetNotificationsFiltered(ctx context.Context, status *string, notificationType *string, limit int, offset int) ([]db.GormNotification, int, error) {
 	return []db.GormNotification{}, 0, nil
-}
-
-// GetPendingNotificationCount implements Repository.GetPendingNotificationCount
-func (m *MockRepositoryForWorker) GetPendingNotificationCount(ctx context.Context) (int, error) {
-	return 1, nil
-}
-
-// GetProcessingNotificationCount implements Repository.GetProcessingNotificationCount
-func (m *MockRepositoryForWorker) GetProcessingNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
-// GetRecentItemsForDeduplication implements Repository.GetRecentItemsForDeduplication
-func (m *MockRepositoryForWorker) GetRecentItemsForDeduplication(ctx context.Context, maxAge time.Duration, limit int, offset int) ([]db.GormItem, int, error) {
-	return []db.GormItem{}, 0, nil
-}
-
-// GetTotalNotificationCount implements Repository.GetTotalNotificationCount
-func (m *MockRepositoryForWorker) GetTotalNotificationCount(ctx context.Context) (int, error) {
-	return 3, nil
 }
 
 func (m *MockRepositoryForWorker) GetNotificationStats(ctx context.Context) (*db.NotificationCountStats, error) {

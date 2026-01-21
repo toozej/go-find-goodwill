@@ -180,32 +180,6 @@ func (m *MockRepository) GetActiveUserAgents(ctx context.Context) ([]db.GormUser
 	return args.Get(0).([]db.GormUserAgent), args.Error(1)
 }
 
-// Add missing notification count methods
-func (m *MockRepository) GetTotalNotificationCount(ctx context.Context) (int, error) {
-	args := m.Called(ctx)
-	return args.Int(0), args.Error(1)
-}
-
-func (m *MockRepository) GetPendingNotificationCount(ctx context.Context) (int, error) {
-	args := m.Called(ctx)
-	return args.Int(0), args.Error(1)
-}
-
-func (m *MockRepository) GetProcessingNotificationCount(ctx context.Context) (int, error) {
-	args := m.Called(ctx)
-	return args.Int(0), args.Error(1)
-}
-
-func (m *MockRepository) GetDeliveredNotificationCount(ctx context.Context) (int, error) {
-	args := m.Called(ctx)
-	return args.Int(0), args.Error(1)
-}
-
-func (m *MockRepository) GetFailedNotificationCount(ctx context.Context) (int, error) {
-	args := m.Called(ctx)
-	return args.Int(0), args.Error(1)
-}
-
 // Add missing GetNotificationsFiltered method
 func (m *MockRepository) GetNotificationsFiltered(ctx context.Context, status *string, notificationType *string, limit int, offset int) ([]db.GormNotification, int, error) {
 	args := m.Called(ctx, status, notificationType, limit, offset)
@@ -218,12 +192,6 @@ func (m *MockRepository) GetNotificationStats(ctx context.Context) (*db.Notifica
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*db.NotificationCountStats), args.Error(1)
-}
-
-// Add missing GetRecentItemsForDeduplication method
-func (m *MockRepository) GetRecentItemsForDeduplication(ctx context.Context, maxAge time.Duration, limit int, offset int) ([]db.GormItem, int, error) {
-	args := m.Called(ctx, maxAge, limit, offset)
-	return args.Get(0).([]db.GormItem), args.Int(1), args.Error(2)
 }
 
 func TestWebServerCreation(t *testing.T) {

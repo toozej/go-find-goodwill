@@ -150,36 +150,12 @@ func (m *MockRepository) GetActiveUserAgents(ctx context.Context) ([]db.GormUser
 	return []db.GormUserAgent{}, nil
 }
 
-// Add missing notification count methods
-func (m *MockRepository) GetTotalNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
-func (m *MockRepository) GetPendingNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
-func (m *MockRepository) GetProcessingNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
-func (m *MockRepository) GetDeliveredNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
-func (m *MockRepository) GetFailedNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
 // Add missing GetNotificationsFiltered method
 func (m *MockRepository) GetNotificationsFiltered(ctx context.Context, status *string, notificationType *string, limit int, offset int) ([]db.GormNotification, int, error) {
 	return []db.GormNotification{}, 0, nil
 }
 
 // Add missing GetRecentItemsForDeduplication method
-func (m *MockRepository) GetRecentItemsForDeduplication(ctx context.Context, maxAge time.Duration, limit int, offset int) ([]db.GormItem, int, error) {
-	return []db.GormItem{}, 0, nil
-}
 
 func (m *MockRepository) GetNotificationStats(ctx context.Context) (*db.NotificationCountStats, error) {
 	return &db.NotificationCountStats{}, nil
@@ -233,8 +209,16 @@ func TestNotificationIntegration(t *testing.T) {
 	}
 
 	// Queue notification for new system
-	err = integration.QueueNotificationForNewSystem(context.Background(), item, search)
-	assert.NoError(t, err, "QueueNotificationForNewSystem should not return an error")
+	notification := db.GormNotification{
+		ItemID:           item.ID,
+		SearchID:         search.ID,
+		NotificationType: "new_system",
+		Status:           "queued",
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+	}
+	err = integration.QueueNotification(context.Background(), notification)
+	assert.NoError(t, err, "QueueNotification should not return an error")
 
 	// Give it a moment to process
 	time.Sleep(100 * time.Millisecond)

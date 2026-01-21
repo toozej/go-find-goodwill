@@ -253,44 +253,6 @@ func (r *GormRepository) GetItemsFiltered(ctx context.Context, searchID *int, st
 	return gormItems, int(total), nil
 }
 
-// GetRecentItemsForDeduplication implements database-level filtering for recent items
-func (r *GormRepository) GetRecentItemsForDeduplication(ctx context.Context, maxAge time.Duration, limit int, offset int) ([]GormItem, int, error) {
-	gormDB, err := r.ensureDB()
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Calculate the cutoff time
-	cutoffTime := time.Now().Add(-maxAge)
-
-	// Start with base query
-	query := gormDB.WithContext(ctx).Model(&GormItem{})
-
-	// Apply recency filter
-	query = query.Where("last_seen >= ?", cutoffTime)
-
-	// Count total matching items
-	var total int64
-	countQuery := query
-	if err := countQuery.Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to count recent items: %w", err)
-	}
-
-	// Apply pagination
-	query = query.Order("last_seen DESC").
-		Offset(offset).
-		Limit(limit)
-
-	// Execute query
-	var gormItems []GormItem
-	result := query.Find(&gormItems)
-	if result.Error != nil {
-		return nil, 0, fmt.Errorf("failed to query recent items: %w", result.Error)
-	}
-
-	return gormItems, int(total), nil
-}
-
 // GetItemByID implements Repository.GetItemByID
 func (r *GormRepository) GetItemByID(ctx context.Context, id int) (*GormItem, error) {
 	gormDB, err := r.ensureDB()
@@ -690,54 +652,6 @@ func (r *GormRepository) GetNotificationStats(ctx context.Context) (*Notificatio
 	}
 
 	return stats, nil
-}
-
-// Deprecated: methods below are kept for interface compatibility but delegate to GetNotificationStats
-// They should be removed once the interface is updated.
-
-// GetTotalNotificationCount implements Repository.GetTotalNotificationCount
-func (r *GormRepository) GetTotalNotificationCount(ctx context.Context) (int, error) {
-	stats, err := r.GetNotificationStats(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return stats.Total, nil
-}
-
-// GetPendingNotificationCount implements Repository.GetPendingNotificationCount
-func (r *GormRepository) GetPendingNotificationCount(ctx context.Context) (int, error) {
-	stats, err := r.GetNotificationStats(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return stats.Pending, nil
-}
-
-// GetProcessingNotificationCount implements Repository.GetProcessingNotificationCount
-func (r *GormRepository) GetProcessingNotificationCount(ctx context.Context) (int, error) {
-	stats, err := r.GetNotificationStats(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return stats.Processing, nil
-}
-
-// GetDeliveredNotificationCount implements Repository.GetDeliveredNotificationCount
-func (r *GormRepository) GetDeliveredNotificationCount(ctx context.Context) (int, error) {
-	stats, err := r.GetNotificationStats(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return stats.Delivered, nil
-}
-
-// GetFailedNotificationCount implements Repository.GetFailedNotificationCount
-func (r *GormRepository) GetFailedNotificationCount(ctx context.Context) (int, error) {
-	stats, err := r.GetNotificationStats(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return stats.Failed, nil
 }
 
 // GetRandomUserAgent implements Repository.GetRandomUserAgent

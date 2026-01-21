@@ -377,11 +377,6 @@ func (m *MockRepository) GetNotificationsFiltered(ctx context.Context, status *s
 	return []db.GormNotification{}, 0, nil
 }
 
-// Add missing GetRecentItemsForDeduplication method
-func (m *MockRepository) GetRecentItemsForDeduplication(ctx context.Context, maxAge time.Duration, limit int, offset int) ([]db.GormItem, int, error) {
-	return []db.GormItem{}, 0, nil
-}
-
 func (m *MockRepository) GetNotificationStats(ctx context.Context) (*db.NotificationCountStats, error) {
 	return &db.NotificationCountStats{}, nil
 }

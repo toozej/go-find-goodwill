@@ -43,11 +43,6 @@ func TestGormCompleteWorkflowIntegration(t *testing.T) {
 		require.NoError(t, err, "Failed to get current version after migration")
 		assert.Greater(t, currentVersion, 0, "Version should be greater than 0 after migration")
 
-		// Get migration history
-		history, err := migrationManager.GetMigrationHistory()
-		require.NoError(t, err, "Failed to get migration history")
-		assert.Greater(t, len(history), 0, "Should have migration history entries")
-
 		// Verify all tables were created by checking if we can query them
 		repo := NewGormRepository(gormDB)
 

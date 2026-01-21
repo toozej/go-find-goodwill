@@ -84,8 +84,16 @@ func TestComprehensiveNotificationSystem(t *testing.T) {
 		item := mockRepo.items[1]
 		search := mockRepo.searches[1]
 
-		// Queue notification using the new system
-		err := integration.QueueNotificationForNewSystem(context.Background(), item, search)
+		// Queue notification directly
+		notification := db.GormNotification{
+			ItemID:           item.ID,
+			SearchID:         search.ID,
+			NotificationType: "test",
+			Status:           "queued",
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		err = integration.QueueNotification(context.Background(), notification)
 		assert.NoError(t, err)
 
 		// Give the system time to process
@@ -97,7 +105,7 @@ func TestComprehensiveNotificationSystem(t *testing.T) {
 		assert.Equal(t, 1, len(allNotifications))
 
 		// The notification should be marked as failed due to network (Gotify server not running)
-		notification := allNotifications[0]
+		notification = allNotifications[0]
 		assert.Equal(t, "failed", notification.Status)
 		assert.Contains(t, notification.ErrorMessage, "failed to send notification")
 	})
@@ -113,7 +121,15 @@ func TestComprehensiveNotificationSystem(t *testing.T) {
 		item := mockRepo.items[2]
 		search := mockRepo.searches[2]
 
-		err := integration.QueueNotificationForNewSystem(ctx, item, search)
+		notification := db.GormNotification{
+			ItemID:           item.ID,
+			SearchID:         search.ID,
+			NotificationType: "test",
+			Status:           "queued",
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		err = integration.QueueNotification(ctx, notification)
 		assert.NoError(t, err)
 
 		// Test stats retrieval with context
@@ -388,37 +404,9 @@ func (m *ComprehensiveMockRepository) GetActiveUserAgents(ctx context.Context) (
 	return []db.GormUserAgent{}, nil
 }
 
-// Add missing notification count methods
-func (m *ComprehensiveMockRepository) GetTotalNotificationCount(ctx context.Context) (int, error) {
-	m.notificationMutex.RLock()
-	defer m.notificationMutex.RUnlock()
-	return len(m.notifications), nil
-}
-
-func (m *ComprehensiveMockRepository) GetPendingNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
-func (m *ComprehensiveMockRepository) GetProcessingNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
-func (m *ComprehensiveMockRepository) GetDeliveredNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
-}
-
 // Add missing GetNotificationsFiltered method
 func (m *ComprehensiveMockRepository) GetNotificationsFiltered(ctx context.Context, status *string, notificationType *string, limit int, offset int) ([]db.GormNotification, int, error) {
 	return []db.GormNotification{}, 0, nil
-}
-
-// Add missing GetRecentItemsForDeduplication method
-func (m *ComprehensiveMockRepository) GetRecentItemsForDeduplication(ctx context.Context, maxAge time.Duration, limit int, offset int) ([]db.GormItem, int, error) {
-	return []db.GormItem{}, 0, nil
-}
-
-func (m *ComprehensiveMockRepository) GetFailedNotificationCount(ctx context.Context) (int, error) {
-	return 0, nil
 }
 
 func (m *ComprehensiveMockRepository) GetNotificationStats(ctx context.Context) (*db.NotificationCountStats, error) {
