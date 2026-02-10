@@ -27,5 +27,7 @@ FROM gcr.io/distroless/static-debian12:latest
 COPY --from=build /go/go-find-goodwill/go-find-goodwill /go/bin/go-find-goodwill
 # Expose port for publishing as web service
 # EXPOSE 8081
+# Run as non-root user (distroless provides 'nonroot' user at UID 65532)
+USER nonroot
 # Run the binary.
 ENTRYPOINT ["/go/bin/go-find-goodwill"]
