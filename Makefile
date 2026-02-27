@@ -128,7 +128,7 @@ local-iterate: ## Run `make local-build local-run` via `air` any time a .go or .
 
 local-release-test: ## Build assets and test goreleaser config using locally installed golang toolchain and goreleaser
 	goreleaser check
-	goreleaser build --rm-dist --snapshot
+	goreleaser build --clean --snapshot
 
 local-release: local-test docker-login ## Release assets using locally installed golang toolchain and goreleaser
 	if test -e $(CURDIR)/go-find-goodwill.key && test -e $(CURDIR)/.env; then \

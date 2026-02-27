@@ -449,6 +449,11 @@ func (c *ShopGoodwillClient) createRequestWithAntiBot(ctx context.Context, metho
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
+	// Validate request is targeting allowed host to prevent SSRF attacks
+	if err := c.validateRequestHost(req); err != nil {
+		return nil, err
+	}
+
 	// Use user-agent rotation from anti-bot system if available
 	if c.antiBotSystem != nil {
 		userAgent, err := c.antiBotSystem.GetUserAgentWithRotation()
@@ -520,6 +525,11 @@ func (c *ShopGoodwillClient) executeRequestWithRetry(ctx context.Context, req *h
 
 // executeRequestWithErrorHandling executes a single request with proper error handling and body management
 func (c *ShopGoodwillClient) executeRequestWithErrorHandling(req *http.Request) (*http.Response, error) {
+	// Validate request is targeting allowed host to prevent SSRF attacks
+	if err := c.validateRequestHost(req); err != nil {
+		return nil, err
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -542,4 +552,30 @@ func (c *ShopGoodwillClient) executeRequestWithErrorHandling(req *http.Request) 
 	}
 
 	return resp, nil
+}
+
+// validateRequestHost ensures the request is targeting an allowed host to prevent SSRF attacks
+func (c *ShopGoodwillClient) validateRequestHost(req *http.Request) error {
+	if req.URL == nil {
+		return fmt.Errorf("request URL is nil")
+	}
+
+	// Get the request host (handle both host:port and just host)
+	reqHost := req.URL.Hostname()
+	if reqHost == "" {
+		return fmt.Errorf("request host is empty")
+	}
+
+	// Get the allowed host from baseURL
+	allowedHost := c.baseURL.Hostname()
+	if allowedHost == "" {
+		return fmt.Errorf("base URL host is not configured")
+	}
+
+	// Validate the request is going to the allowed host
+	if reqHost != allowedHost {
+		return fmt.Errorf("request host %q is not allowed (expected %q): potential SSRF attack", reqHost, allowedHost)
+	}
+
+	return nil
 }
