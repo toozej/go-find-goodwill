@@ -530,6 +530,7 @@ func (c *ShopGoodwillClient) executeRequestWithErrorHandling(req *http.Request) 
 		return nil, err
 	}
 
+	// #nosec G704 -- Host is validated by validateRequestHost(req) above
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err

@@ -130,8 +130,11 @@ result := db.Where("enabled = ?", true).Find(&searches)
    ```bash
    # Add GORM dependencies
    go get -u gorm.io/gorm
-   go get -u gorm.io/driver/sqlite
+   go get -u github.com/glebarez/sqlite
    ```
+
+   > [!NOTE]
+   > We use `github.com/glebarez/sqlite` (a pure Go implementation) instead of `gorm.io/driver/sqlite` to allow building the application with `CGO_ENABLED=0`, which simplifies cross-compilation and deployment.
 
 3. **Define GORM Models**
    ```go
@@ -600,5 +603,6 @@ The migration to GORM provides significant benefits including automatic schema m
 
 For additional information, refer to:
 - [GORM Official Documentation](https://gorm.io/docs/)
+- [glebarez/sqlite (Pure Go SQLite)](https://github.com/glebarez/sqlite)
 - [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) - Complete schema specification
 - [GORM_USAGE_GUIDE.md](GORM_USAGE_GUIDE.md) - Usage patterns and examples
