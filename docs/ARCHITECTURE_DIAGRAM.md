@@ -312,7 +312,7 @@ flowchart TD
 ### Containerized Deployment
 ```mermaid
 graph TD
-    A[User] -->|HTTP| B[Web Server:8080]
+    A[User] -->|HTTP| B[Web Server:8081]
     A -->|CLI| C[Application Container]
     C --> D[SQLite Database Volume]
     C --> E[Configuration Volume]

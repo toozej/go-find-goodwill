@@ -40,8 +40,6 @@ func TestGetEnvVars(t *testing.T) {
 				"WEB_SERVER_TLS_ENABLED":       "true",
 				"WEB_SERVER_TLS_CERT":          "/path/to/cert.pem",
 				"WEB_SERVER_TLS_KEY":           "/path/to/key.pem",
-				"WEB_SERVER_STATIC_DIR":        "./static",
-				"WEB_SERVER_TEMPLATE_DIR":      "./templates",
 				"WEB_SERVER_READ_TIMEOUT":      "60s",
 				"WEB_SERVER_WRITE_TIMEOUT":     "60s",
 				"WEB_SERVER_IDLE_TIMEOUT":      "240s",
@@ -98,8 +96,6 @@ func TestGetEnvVars(t *testing.T) {
 						CertFile: "/path/to/cert.pem",
 						KeyFile:  "/path/to/key.pem",
 					},
-					StaticDir:    "./static",
-					TemplateDir:  "./templates",
 					ReadTimeout:  60 * time.Second,
 					WriteTimeout: 60 * time.Second,
 					IdleTimeout:  240 * time.Second,
@@ -218,8 +214,6 @@ LOG_MAX_AGE=10`,
 						CertFile: "/env/path/to/cert.pem",
 						KeyFile:  "/env/path/to/key.pem",
 					},
-					StaticDir:    "./envstatic",
-					TemplateDir:  "./envtemplates",
 					ReadTimeout:  45 * time.Second,
 					WriteTimeout: 45 * time.Second,
 					IdleTimeout:  180 * time.Second,
@@ -293,14 +287,12 @@ GOODWILL_PASSWORD=filepass`,
 				Web: WebConfig{
 					Enabled: false,     // defaults
 					Host:    "0.0.0.0", // defaults
-					Port:    8080,      // defaults
+					Port:    8081,      // defaults
 					TLS: TLSConfig{
 						Enabled:  false, // defaults
 						CertFile: "",    // defaults
 						KeyFile:  "",    // defaults
 					},
-					StaticDir:    "web/static",      // defaults
-					TemplateDir:  "web/templates",   // defaults
 					ReadTimeout:  30 * time.Second,  // defaults
 					WriteTimeout: 30 * time.Second,  // defaults
 					IdleTimeout:  120 * time.Second, // defaults
@@ -368,14 +360,12 @@ GOODWILL_PASSWORD=filepass`,
 				Web: WebConfig{
 					Enabled: false,
 					Host:    "0.0.0.0",
-					Port:    8080,
+					Port:    8081,
 					TLS: TLSConfig{
 						Enabled:  false,
 						CertFile: "",
 						KeyFile:  "",
 					},
-					StaticDir:    "web/static",
-					TemplateDir:  "web/templates",
 					ReadTimeout:  30 * time.Second,
 					WriteTimeout: 30 * time.Second,
 					IdleTimeout:  120 * time.Second,
@@ -451,7 +441,7 @@ GOODWILL_PASSWORD=filepass`,
 				"NOTIFICATION_GOTIFY_ENABLED", "NOTIFICATION_GOTIFY_URL", "NOTIFICATION_GOTIFY_TOKEN",
 				"NOTIFICATION_GOTIFY_PRIORITY", "WEB_SERVER_ENABLED", "WEB_SERVER_HOST",
 				"WEB_SERVER_PORT", "WEB_SERVER_TLS_ENABLED", "WEB_SERVER_TLS_CERT",
-				"WEB_SERVER_TLS_KEY", "WEB_SERVER_STATIC_DIR", "WEB_SERVER_TEMPLATE_DIR",
+				"WEB_SERVER_TLS_KEY",
 				"WEB_SERVER_READ_TIMEOUT", "WEB_SERVER_WRITE_TIMEOUT", "WEB_SERVER_IDLE_TIMEOUT",
 				"DB_PATH", "DB_MAX_CONNECTIONS", "DB_CONNECTION_TIMEOUT",
 				"ANTIBOT_USER_AGENT_ROTATION", "ANTIBOT_ROTATION_INTERVAL",

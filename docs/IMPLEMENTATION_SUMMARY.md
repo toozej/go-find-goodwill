@@ -164,7 +164,7 @@ GOODWILL_USERNAME          # ShopGoodwill credentials
 GOODWILL_PASSWORD          # ShopGoodwill credentials
 SEARCH_INTERVAL_MINUTES    # Search frequency (default: 15)
 NOTIFICATION_GOTIFY_URL    # Gotify server URL
-WEB_SERVER_PORT           # Web server port (default: 8080)
+WEB_SERVER_PORT           # Web server port (default: 8081)
 DB_PATH                    # Database path (default: ./goodwill.db)
 ```
 

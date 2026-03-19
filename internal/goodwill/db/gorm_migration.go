@@ -25,9 +25,8 @@ func NewGormMigrationManager(db *GormDatabase) *GormMigrationManager {
 }
 
 // GormMigration represents a database migration with GORM
-// This is the same as the one in gorm_models.go but defined here for the migration manager
 type GormMigration struct {
-	ID        uint      `gorm:"primaryKey"`
+	ID        int       `gorm:"primaryKey"`
 	Version   int       `gorm:"unique;not null"`
 	Name      string    `gorm:"size:255;not null"`
 	AppliedAt time.Time `gorm:"autoCreateTime"`
@@ -136,6 +135,37 @@ func (m *GormMigrationManager) Migrate() error {
 		}
 
 		log.Infof("Successfully recorded GORM migration %d", migration.Version)
+	}
+
+	return nil
+}
+
+// Seed populates the database with initial data if it's empty
+func (m *GormMigrationManager) Seed() error {
+	if !m.db.IsConnected() {
+		return errors.New("database not connected")
+	}
+
+	// Seed default user agents if none exist
+	var count int64
+	if err := m.db.GetDB().Model(&GormUserAgent{}).Count(&count).Error; err != nil {
+		return fmt.Errorf("failed to count user agents: %w", err)
+	}
+
+	if count == 0 {
+		log.Info("Seeding default user agents...")
+		defaultAgents := []GormUserAgent{
+			{UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", IsActive: true},
+			{UserAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", IsActive: true},
+			{UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0", IsActive: true},
+			{UserAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15", IsActive: true},
+			{UserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", IsActive: true},
+		}
+
+		if err := m.db.GetDB().Create(&defaultAgents).Error; err != nil {
+			return fmt.Errorf("failed to seed user agents: %w", err)
+		}
+		log.Infof("Successfully seeded %d default user agents", len(defaultAgents))
 	}
 
 	return nil

@@ -2,7 +2,9 @@ package web
 
 import (
 	"embed"
+	"io/fs"
 	"log"
+	"mime"
 
 	"github.com/sirupsen/logrus"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/antibot"
@@ -26,7 +28,8 @@ type WebServer struct {
 	notificationSvc *notifications.NotificationIntegration
 	// server field removed - was unused
 	// ui field removed - was unused
-	log *logrus.Logger
+	log       *logrus.Logger
+	apiServer *webapi.Server
 }
 
 // NewWebServer creates a new web server with both API and UI
@@ -37,37 +40,51 @@ func NewWebServer(cfg *config.Config, repo db.Repository, scheduler *scheduling.
 		scheduler:       scheduler,
 		notificationSvc: notificationSvc,
 		log:             logger,
+		apiServer:       webapi.NewServer(&cfg.Web, repo, scheduler, notificationSvc, logger),
 	}
 }
 
-// Start starts the web server (non-blocking)
+// Start starts the web server (blocking)
 func (ws *WebServer) Start() error {
-	// Create API server with all services
-	apiServer := webapi.NewServer(&ws.config.Web, ws.repo, ws.scheduler, ws.notificationSvc, ws.log)
+	// Start background services
+	ws.scheduler.Start()
+	ws.notificationSvc.Start()
 
 	// Create UI handler
-	uiHandler, err := ui.NewUIHandler(staticFS, ws.log, ws.repo)
+	templateFS, err := fs.Sub(staticFS, "ui/templates")
+	if err != nil {
+		return err
+	}
+	assetFS, err := fs.Sub(staticFS, "ui/static")
+	if err != nil {
+		return err
+	}
+
+	uiHandler, err := ui.NewUIHandler(templateFS, assetFS, ws.log, ws.repo)
 	if err != nil {
 		return err
 	}
 
 	// Setup UI routes
-	uiHandler.SetupRoutes(apiServer.Router())
+	uiHandler.SetupRoutes(ws.apiServer.Router())
 
-	// Start the server (non-blocking)
-	apiServer.Start()
-	return nil
+	// Start the server (blocking)
+	return ws.apiServer.Start()
 }
 
 // Shutdown gracefully shuts down the web server
 func (ws *WebServer) Shutdown() error {
-	// Create API server for shutdown
-	apiServer := webapi.NewServer(&ws.config.Web, ws.repo, ws.scheduler, ws.notificationSvc, ws.log)
-	return apiServer.Shutdown()
+	ws.scheduler.Stop()
+	ws.notificationSvc.Stop()
+	return ws.apiServer.Shutdown()
 }
 
 // RunWebServer starts the web server as a standalone application
 func RunWebServer(cfg config.Config) {
+	// Register MIME types for static assets
+	// This is important for distroless images which don't have a full /etc/mime.types
+	_ = mime.AddExtensionType(".js", "application/javascript")
+	_ = mime.AddExtensionType(".css", "text/css")
 
 	// Initialize logger
 	logger := logrus.New()
@@ -97,6 +114,25 @@ func RunWebServer(cfg config.Config) {
 
 	// Create GORM repository
 	repo := db.NewGormRepository(gormDatabase)
+
+	// Run database migrations
+	migrationManager := db.NewGormMigrationManager(gormDatabase)
+	if err := migrationManager.EnsureMigrationsTable(); err != nil {
+		log.Printf("Failed to ensure migrations table: %v", err)
+		return
+	}
+	if err := migrationManager.LoadMigrations(); err != nil {
+		log.Printf("Failed to load migrations: %v", err)
+		return
+	}
+	if err := migrationManager.Migrate(); err != nil {
+		log.Printf("Failed to run migrations: %v", err)
+		return
+	}
+	if err := migrationManager.Seed(); err != nil {
+		log.Printf("Failed to seed database: %v", err)
+		return
+	}
 
 	// Create core services
 	// Create anti-bot system
@@ -128,4 +164,6 @@ func RunWebServer(cfg config.Config) {
 		log.Printf("Web server failed: %v", err)
 		return
 	}
+
+	logger.Info("Application exited successfully")
 }

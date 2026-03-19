@@ -6,7 +6,12 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    read_only: true
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_PATH=/data/goodwill.db
+    volumes:
+      - goodwill-data:/data
     labels:
       - "traefik.enable=false"
       # labels below for publishing as web service
@@ -19,3 +24,6 @@ services:
       # - "traefik.http.routers.go-find-goodwill-secure.tls=true"
     # networks:
       # - traefik
+
+volumes:
+  goodwill-data:

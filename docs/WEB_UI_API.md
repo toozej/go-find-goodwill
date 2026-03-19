@@ -639,7 +639,7 @@ func authMiddleware(config *config.Config) func(http.Handler) http.Handler {
 # Web server configuration
 server:
   host: "0.0.0.0"
-  port: 8080
+  port: 8081
   read_timeout: 30s
   write_timeout: 30s
   idle_timeout: 120s

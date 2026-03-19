@@ -215,7 +215,7 @@ MIN_SEARCH_INTERVAL_VARIATION=5
 MAX_SEARCH_INTERVAL_VARIATION=10
 
 # Web UI settings
-WEB_SERVER_PORT=8080
+WEB_SERVER_PORT=8081
 WEB_SERVER_HOST=0.0.0.0
 
 # Database settings
@@ -231,7 +231,7 @@ DB_PATH=./goodwill.db
 --notification-threshold int Notification threshold in days (default 1)
 --gotify-url string          Gotify server URL
 --gotify-token string        Gotify authentication token
---web-port int               Web server port (default 8080)
+--web-port int               Web server port (default 8081)
 --db-path string             Database file path (default ./goodwill.db)
 --disable-regex              Disable regex-based similar searches
 --run-once                   Run search once and exit

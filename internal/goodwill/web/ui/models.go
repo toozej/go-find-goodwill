@@ -15,6 +15,14 @@ type DashboardData struct {
 	ActiveItems         int
 	RecentNotifications []api.NotificationResponse
 	SearchStats         []SearchStat
+	FlashMessages       []FlashMessage
+	CSRFToken           string
+}
+
+// FlashMessage represents a flash message to display in the UI
+type FlashMessage struct {
+	Type    string // success, info, warning, danger
+	Message string
 }
 
 // SearchStat represents statistics for a search
@@ -27,20 +35,24 @@ type SearchStat struct {
 
 // SearchesData represents data for the searches page
 type SearchesData struct {
-	Title    string
-	Searches []api.SearchResponse
-	Total    int
-	Limit    int
-	Offset   int
+	Title         string
+	Searches      []api.SearchResponse
+	Total         int
+	Limit         int
+	Offset        int
+	FlashMessages []FlashMessage
+	CSRFToken     string
 }
 
 // ItemsData represents data for the items page
 type ItemsData struct {
-	Title  string
-	Items  []api.ItemResponse
-	Total  int
-	Limit  int
-	Offset int
+	Title         string
+	Items         []api.ItemResponse
+	Total         int
+	Limit         int
+	Offset        int
+	FlashMessages []FlashMessage
+	CSRFToken     string
 }
 
 // NotificationsData represents data for the notifications page
@@ -50,16 +62,22 @@ type NotificationsData struct {
 	Total         int
 	Limit         int
 	Offset        int
+	FlashMessages []FlashMessage
+	CSRFToken     string
 }
 
 // SettingsData represents data for the settings page
 type SettingsData struct {
-	Title string
+	Title         string
+	FlashMessages []FlashMessage
 	// Settings data would go here
+	CSRFToken string
 }
 
 // LoginData represents data for the login page
 type LoginData struct {
-	Title string
+	Title         string
+	FlashMessages []FlashMessage
 	// Login form data would go here
+	CSRFToken string
 }

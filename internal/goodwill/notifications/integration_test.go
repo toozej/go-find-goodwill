@@ -167,7 +167,7 @@ func TestNotificationIntegration(t *testing.T) {
 		Notification: config.NotificationConfig{
 			Gotify: config.GotifyConfig{
 				Enabled:  true,
-				URL:      "http://localhost:8080",
+				URL:      "http://localhost:8081",
 				Token:    "test-token",
 				Priority: 5,
 			},
@@ -248,7 +248,7 @@ func TestNotificationManagerWithAllServices(t *testing.T) {
 		Notification: config.NotificationConfig{
 			Gotify: config.GotifyConfig{
 				Enabled:  true,
-				URL:      "http://localhost:8080",
+				URL:      "http://localhost:8081",
 				Token:    "test-token",
 				Priority: 5,
 			},

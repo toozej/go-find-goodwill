@@ -115,7 +115,7 @@ NOTIFICATION_WEBHOOK_URLS    # Webhook URLs (comma-separated)
 ```
 WEB_SERVER_ENABLED   # Enable web server (default: true)
 WEB_SERVER_HOST      # Host to bind to (default: 0.0.0.0)
-WEB_SERVER_PORT      # Port to listen on (default: 8080)
+WEB_SERVER_PORT      # Port to listen on (default: 8081)
 WEB_SERVER_TLS_ENABLED # Enable TLS (default: false)
 WEB_SERVER_TLS_CERT  # TLS certificate file
 WEB_SERVER_TLS_KEY   # TLS key file
@@ -226,7 +226,7 @@ searchCmd.Flags().StringVar(&regexPattern, "regex", "", "Regex pattern for simil
 
 // Web server flags
 webCmd.Flags().StringVar(&webHost, "host", "0.0.0.0", "Host to bind to")
-webCmd.Flags().IntVar(&webPort, "port", 8080, "Port to listen on")
+webCmd.Flags().IntVar(&webPort, "port", 8081, "Port to listen on")
 webCmd.Flags().BoolVar(&webTLS, "tls", false, "Enable TLS")
 webCmd.Flags().StringVar(&webCert, "cert", "", "TLS certificate file")
 webCmd.Flags().StringVar(&webKey, "key", "", "TLS key file")
@@ -281,7 +281,7 @@ notification:
 web:
   enabled: true
   host: "0.0.0.0"
-  port: 8080
+  port: 8081
   tls:
     enabled: false
     cert_file: ""
@@ -599,7 +599,7 @@ notification:
 
 web:
   enabled: true
-  port: 8080
+  port: 8081
 
 database:
   path: "/var/lib/go-find-goodwill/goodwill.db"

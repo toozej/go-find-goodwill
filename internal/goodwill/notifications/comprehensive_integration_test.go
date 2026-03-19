@@ -19,7 +19,7 @@ func TestComprehensiveNotificationSystem(t *testing.T) {
 		Notification: config.NotificationConfig{
 			Gotify: config.GotifyConfig{
 				Enabled:  true,
-				URL:      "http://localhost:8080",
+				URL:      "http://localhost:8081",
 				Token:    "test-token",
 				Priority: 5,
 			},
@@ -107,7 +107,7 @@ func TestComprehensiveNotificationSystem(t *testing.T) {
 		// The notification should be marked as failed due to network (Gotify server not running)
 		notification = allNotifications[0]
 		assert.Equal(t, "failed", notification.Status)
-		assert.Contains(t, notification.ErrorMessage, "failed to send notification")
+		assert.Contains(t, notification.ErrorMessage, "Failed to send notification")
 	})
 
 	t.Run("ContextPropagation", func(t *testing.T) {

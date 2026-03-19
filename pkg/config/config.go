@@ -111,10 +111,9 @@ type PushbulletConfig struct {
 type WebConfig struct {
 	Enabled      bool          `env:"WEB_SERVER_ENABLED" envDefault:"false" yaml:"enabled"`
 	Host         string        `env:"WEB_SERVER_HOST" envDefault:"0.0.0.0" yaml:"host"`
-	Port         int           `env:"WEB_SERVER_PORT" envDefault:"8080" yaml:"port"`
+	Port         int           `env:"WEB_SERVER_PORT" envDefault:"8081" yaml:"port"`
 	TLS          TLSConfig     `yaml:"tls"`
-	StaticDir    string        `env:"WEB_SERVER_STATIC_DIR" envDefault:"web/static" yaml:"static_dir"`
-	TemplateDir  string        `env:"WEB_SERVER_TEMPLATE_DIR" envDefault:"web/templates" yaml:"template_dir"`
+	CSRFAuthKey  string        `env:"WEB_CSRF_AUTH_KEY" yaml:"csrf_auth_key"`
 	ReadTimeout  time.Duration `env:"WEB_SERVER_READ_TIMEOUT" envDefault:"30s" yaml:"read_timeout"`
 	WriteTimeout time.Duration `env:"WEB_SERVER_WRITE_TIMEOUT" envDefault:"30s" yaml:"write_timeout"`
 	IdleTimeout  time.Duration `env:"WEB_SERVER_IDLE_TIMEOUT" envDefault:"120s" yaml:"idle_timeout"`

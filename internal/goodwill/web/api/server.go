@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/gorilla/csrf"
 	log "github.com/sirupsen/logrus"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/core/scheduling"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/db"
@@ -43,27 +45,50 @@ func NewServer(cfg *config.WebConfig, repo db.Repository, scheduler *scheduling.
 	}
 }
 
-// Start starts the web server (non-blocking)
-func (s *Server) Start() {
+// Start starts the web server (blocking)
+func (s *Server) Start() error {
 	// Setup routes
 	s.setupRoutes()
+
+	// Setup CSRF Protection
+	var csrfKey []byte
+	if s.config.CSRFAuthKey != "" {
+		csrfKey = []byte(s.config.CSRFAuthKey)
+		// Ensure it's 32 bytes
+		if len(csrfKey) > 32 {
+			csrfKey = csrfKey[:32]
+		}
+	} else {
+		// Generate random 32-byte key
+		csrfKey = make([]byte, 32)
+		if _, err := rand.Read(csrfKey); err != nil {
+			return fmt.Errorf("failed to generate secure CSRF key: %w", err)
+		}
+		s.log.Warn("No CSRFAuthKey configured. Generated random key (sessions will invalidate on restart).")
+	}
+
+	csrfMiddleware := csrf.Protect(
+		csrfKey,
+		csrf.Secure(!s.config.TLS.Enabled && os.Getenv("ENV") != "development"), // True in prod, false otherwise
+		csrf.Path("/"),
+		// The API uses JSON, and we also have forms. By default gorilla/csrf checks X-CSRF-Token or csrf_token.
+	)
 
 	// Create HTTP server
 	s.httpServer = &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", s.config.Host, s.config.Port),
-		Handler:      s.router,
+		Handler:      csrfMiddleware(s.router),
 		ReadTimeout:  s.config.ReadTimeout,
 		WriteTimeout: s.config.WriteTimeout,
 		IdleTimeout:  s.config.IdleTimeout,
 	}
 
-	// Start server in goroutine
-	go func() {
-		s.log.Infof("Starting web server on %s", s.httpServer.Addr)
-		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			s.log.Errorf("Server error: %v", err)
-		}
-	}()
+	s.log.Infof("Starting web server on %s", s.httpServer.Addr)
+	if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		s.log.Errorf("Server error: %v", err)
+		return err
+	}
+	return nil
 }
 
 // Shutdown gracefully shuts down the web server
@@ -105,6 +130,9 @@ func (s *Server) setupRoutes() {
 	// Notification endpoints
 	apiV1.HandleFunc("GET /notifications", s.handleGetNotifications)
 	apiV1.HandleFunc("POST /notifications/test", s.handleTestNotification)
+
+	// System endpoints
+	apiV1.HandleFunc("GET /system/status", s.handleHealthCheck)
 
 	// Mount API v1 under /api/v1
 	s.router.Handle("/api/v1/", http.StripPrefix("/api/v1", apiV1))

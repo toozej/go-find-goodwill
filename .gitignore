@@ -40,3 +40,5 @@ TASKS.md
 .kiro/
 .kilocode/
 pr-reviews*.md
+go-find-goodwill-debug.tar
+goodwill.db

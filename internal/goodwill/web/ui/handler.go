@@ -1,10 +1,14 @@
 package ui
 
 import (
-	"embed"
+	"fmt"
 	"html/template"
+	"io/fs"
 	"net/http"
+	"path"
+	"strings"
 
+	"github.com/gorilla/csrf"
 	"github.com/sirupsen/logrus"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/db"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/web/api"
@@ -12,46 +16,65 @@ import (
 
 // UIHandler represents the UI handler
 type UIHandler struct {
-	templates *template.Template
+	templates map[string]*template.Template
 	staticFS  http.FileSystem
 	log       *logrus.Logger
 	repo      db.Repository
 }
 
 // NewUIHandler creates a new UI handler
-func NewUIHandler(staticFS embed.FS, logger *logrus.Logger, repo db.Repository) (*UIHandler, error) {
+func NewUIHandler(templateFS fs.FS, staticFS fs.FS, logger *logrus.Logger, repo db.Repository) (*UIHandler, error) {
 	// Parse templates
-	templates, err := parseTemplates(staticFS)
+	tmplMap, err := parseTemplates(templateFS)
 	if err != nil {
 		return nil, err
 	}
 
 	return &UIHandler{
-		templates: templates,
+		templates: tmplMap,
 		staticFS:  http.FS(staticFS),
 		log:       logger,
 		repo:      repo,
 	}, nil
 }
 
-// parseTemplates parses all HTML templates using template.ParseFS
-func parseTemplates(staticFS embed.FS) (*template.Template, error) {
-	// Use template.ParseFS to parse all templates in the templates directory
-	tmpl := template.New("")
+// parseTemplates parses HTML templates individually to avoid block name collisions
+func parseTemplates(templateFS fs.FS) (map[string]*template.Template, error) {
+	templates := make(map[string]*template.Template)
 
-	// Parse all templates in the templates directory
-	tmpl, err := tmpl.ParseFS(staticFS, "templates/*.html")
-	if err != nil {
-		return nil, err
+	// List of pages to parse
+	pages := []string{
+		"dashboard.html",
+		"searches.html",
+		"items.html",
+		"notifications.html",
+		"settings.html",
+		"login.html",
 	}
 
-	return tmpl, nil
+	for _, page := range pages {
+		tmpl := template.New(page)
+		// Each page is parsed along with base.html
+		// We use ParseFS to get both files
+		tmpl, err := tmpl.ParseFS(templateFS, "base.html", page)
+		if err != nil {
+			// Skip missing templates or handle accordingly
+			continue
+		}
+		templates[page] = tmpl
+	}
+
+	if len(templates) == 0 {
+		return nil, fmt.Errorf("no templates parsed")
+	}
+
+	return templates, nil
 }
 
 // SetupRoutes configures UI routes
 func (h *UIHandler) SetupRoutes(mux *http.ServeMux) {
-	// Static files
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(h.staticFS)))
+	// Static files using custom handler for better MIME type control
+	mux.HandleFunc("GET /static/", h.handleStatic)
 
 	// Page routes
 	mux.HandleFunc("GET /dashboard", h.handleDashboard)
@@ -60,7 +83,7 @@ func (h *UIHandler) SetupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /notifications", h.handleNotifications)
 	mux.HandleFunc("GET /settings", h.handleSettings)
 	mux.HandleFunc("GET /login", h.handleLogin)
-	mux.HandleFunc("GET /", h.handleDashboard)
+	mux.HandleFunc("GET /{$}", h.handleDashboard)
 }
 
 // handleDashboard handles the dashboard page
@@ -147,10 +170,16 @@ func (h *UIHandler) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		ActiveItems:         len(items), // All items are considered active for now
 		RecentNotifications: notificationResponses,
 		SearchStats:         searchStats,
+		FlashMessages:       []FlashMessage{},
+		CSRFToken:           csrf.Token(r),
 	}
 
-	if err := h.templates.ExecuteTemplate(w, "dashboard.html", data); err != nil {
-		h.log.Errorf("Failed to render dashboard: %v", err)
+	if tmpl, ok := h.templates["dashboard.html"]; ok {
+		if err := tmpl.Execute(w, data); err != nil {
+			h.log.Errorf("Failed to render dashboard: %v", err)
+		}
+	} else {
+		h.log.Error("Dashboard template not found")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -191,15 +220,21 @@ func (h *UIHandler) handleSearches(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := SearchesData{
-		Title:    "Search Management",
-		Searches: searchResponses,
-		Total:    totalCount,
-		Limit:    20,
-		Offset:   0,
+		Title:         "Search Management",
+		Searches:      searchResponses,
+		Total:         totalCount,
+		Limit:         20,
+		Offset:        0,
+		FlashMessages: []FlashMessage{},
+		CSRFToken:     csrf.Token(r),
 	}
 
-	if err := h.templates.ExecuteTemplate(w, "searches.html", data); err != nil {
-		h.log.Errorf("Failed to render searches: %v", err)
+	if tmpl, ok := h.templates["searches.html"]; ok {
+		if err := tmpl.Execute(w, data); err != nil {
+			h.log.Errorf("Failed to render searches: %v", err)
+		}
+	} else {
+		h.log.Error("Searches template not found")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -250,15 +285,21 @@ func (h *UIHandler) handleItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := ItemsData{
-		Title:  "Item Management",
-		Items:  itemResponses,
-		Total:  totalCount,
-		Limit:  20,
-		Offset: 0,
+		Title:         "Item Management",
+		Items:         itemResponses,
+		Total:         totalCount,
+		Limit:         20,
+		Offset:        0,
+		FlashMessages: []FlashMessage{},
+		CSRFToken:     csrf.Token(r),
 	}
 
-	if err := h.templates.ExecuteTemplate(w, "items.html", data); err != nil {
-		h.log.Errorf("Failed to render items: %v", err)
+	if tmpl, ok := h.templates["items.html"]; ok {
+		if err := tmpl.Execute(w, data); err != nil {
+			h.log.Errorf("Failed to render items: %v", err)
+		}
+	} else {
+		h.log.Error("Items template not found")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -302,10 +343,16 @@ func (h *UIHandler) handleNotifications(w http.ResponseWriter, r *http.Request) 
 		Total:         totalCount,
 		Limit:         20,
 		Offset:        0,
+		FlashMessages: []FlashMessage{},
+		CSRFToken:     csrf.Token(r),
 	}
 
-	if err := h.templates.ExecuteTemplate(w, "notifications.html", data); err != nil {
-		h.log.Errorf("Failed to render notifications: %v", err)
+	if tmpl, ok := h.templates["notifications.html"]; ok {
+		if err := tmpl.Execute(w, data); err != nil {
+			h.log.Errorf("Failed to render notifications: %v", err)
+		}
+	} else {
+		h.log.Error("Notifications template not found")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -313,11 +360,17 @@ func (h *UIHandler) handleNotifications(w http.ResponseWriter, r *http.Request) 
 // handleSettings handles the settings page
 func (h *UIHandler) handleSettings(w http.ResponseWriter, r *http.Request) {
 	data := SettingsData{
-		Title: "System Settings",
+		Title:         "System Settings",
+		FlashMessages: []FlashMessage{},
+		CSRFToken:     csrf.Token(r),
 	}
 
-	if err := h.templates.ExecuteTemplate(w, "settings.html", data); err != nil {
-		h.log.Errorf("Failed to render settings: %v", err)
+	if tmpl, ok := h.templates["settings.html"]; ok {
+		if err := tmpl.Execute(w, data); err != nil {
+			h.log.Errorf("Failed to render settings: %v", err)
+		}
+	} else {
+		h.log.Error("Settings template not found")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -325,11 +378,68 @@ func (h *UIHandler) handleSettings(w http.ResponseWriter, r *http.Request) {
 // handleLogin handles the login page
 func (h *UIHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	data := LoginData{
-		Title: "Login",
+		Title:         "Login",
+		FlashMessages: []FlashMessage{},
+		CSRFToken:     csrf.Token(r),
 	}
 
-	if err := h.templates.ExecuteTemplate(w, "login.html", data); err != nil {
-		h.log.Errorf("Failed to render login: %v", err)
+	if tmpl, ok := h.templates["login.html"]; ok {
+		if err := tmpl.Execute(w, data); err != nil {
+			h.log.Errorf("Failed to render login: %v", err)
+		}
+	} else {
+		h.log.Error("Login template not found")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
+}
+
+// handleStatic serves static files with explicit MIME type handling
+func (h *UIHandler) handleStatic(w http.ResponseWriter, r *http.Request) {
+	// Strip prefix
+	filePath := strings.TrimPrefix(r.URL.Path, "/static/")
+	if filePath == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Set MIME type based on extension
+	ext := strings.ToLower(path.Ext(filePath))
+	contentType := ""
+	switch ext {
+	case ".js":
+		contentType = "text/javascript"
+	case ".css":
+		contentType = "text/css"
+	case ".png":
+		contentType = "image/png"
+	case ".jpg", ".jpeg":
+		contentType = "image/jpeg"
+	case ".gif":
+		contentType = "image/gif"
+	case ".svg":
+		contentType = "image/svg+xml"
+	case ".ico":
+		contentType = "image/x-icon"
+	}
+
+	if contentType != "" {
+		w.Header().Set("Content-Type", contentType)
+	}
+
+	// Try to get file info for Content-Length to prevent corruption errors
+	if f, err := h.staticFS.Open(filePath); err == nil {
+		if stat, err := f.Stat(); err == nil {
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))
+		}
+		_ = f.Close()
+	}
+
+	// Disable sniffing
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	// Log asset serving for debugging
+	h.log.Debugf("Serving static file: %s (MIME: %s)", filePath, contentType)
+
+	// Serve the file
+	http.StripPrefix("/static/", http.FileServer(h.staticFS)).ServeHTTP(w, r)
 }

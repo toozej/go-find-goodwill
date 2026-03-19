@@ -1,43 +1,43 @@
-{{define "searches.html"}}
 {{template "base.html" .}}
 
 {{define "content"}}
-<div class="space-y-6">
-    <h1 class="text-2xl font-bold">Search Management</h1>
-
-    <!-- Search Controls -->
-    <div class="flex justify-between items-center">
-        <button id="add-search-btn" class="btn btn-primary">
-            <span class="mr-2">+</span> Add Search
-        </button>
-        <div class="flex space-x-2">
-            <button id="refresh-btn" class="btn btn-secondary">
-                <span class="mr-2">🔄</span> Refresh
+<div class="space-y-8">
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Search Management</h1>
+        <div class="flex space-x-3">
+            <button id="refresh-btn" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center shadow-sm">
+                <svg class="w-4 h-4 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Refresh
             </button>
-            <button id="execute-all-btn" class="btn btn-success">
-                <span class="mr-2">▶</span> Execute All
+            <button id="execute-all-btn" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center shadow-sm">
+                <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Execute All
+            </button>
+            <button id="add-search-btn" class="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors flex items-center shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add Search
             </button>
         </div>
     </div>
 
     <!-- Search List -->
-    <div class="bg-white p-4 rounded-lg shadow">
-        <h2 class="text-xl font-bold mb-4">Active Searches</h2>
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6">Active Searches</h2>
         <div class="overflow-x-auto">
-            <table class="min-w-full">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead>
-                    <tr class="border-b">
-                        <th class="text-left p-2">Name</th>
-                        <th class="text-left p-2">Query</th>
-                        <th class="text-left p-2">Status</th>
-                        <th class="text-left p-2">Last Checked</th>
-                        <th class="text-left p-2">Items Found</th>
-                        <th class="text-left p-2">Actions</th>
+                    <tr>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50 rounded-tl-lg">Name</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50">Query</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50">Status</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50">Last Checked</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50">Items Found</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50 rounded-tr-lg">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="searches-table">
+                <tbody id="searches-table" class="divide-y divide-slate-200 dark:divide-slate-700">
                     <tr>
-                        <td colspan="6" class="text-center p-4">Loading searches...</td>
+                        <td colspan="6" class="text-center p-6 text-slate-500 dark:text-slate-400">Loading searches...</td>
                     </tr>
                 </tbody>
             </table>
@@ -45,73 +45,73 @@
     </div>
 
     <!-- Search Details Modal -->
-    <div id="search-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden" style="z-index: 1000;">
-        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold" id="modal-title">Search Details</h2>
-                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
-                    <span class="text-2xl">×</span>
+    <div id="search-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity" style="z-index: 1000;">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl max-w-2xl w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white" id="modal-title">Search Details</h2>
+                <button id="close-modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
 
-            <form id="search-form" class="space-y-4">
+            <form id="search-form" class="space-y-5">
                 <input type="hidden" id="search-id" name="id">
 
-                <div class="form-group">
-                    <label for="search-name">Name</label>
-                    <input type="text" id="search-name" name="name" required class="w-full p-2 border rounded">
+                <div class="form-group space-y-1.5">
+                    <label for="search-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
+                    <input type="text" id="search-name" name="name" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                 </div>
 
-                <div class="form-group">
-                    <label for="search-query">Query</label>
-                    <input type="text" id="search-query" name="query" required class="w-full p-2 border rounded">
+                <div class="form-group space-y-1.5">
+                    <label for="search-query" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Query</label>
+                    <input type="text" id="search-query" name="query" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                 </div>
 
-                <div class="form-group">
-                    <label for="search-regex">Regex Pattern (Optional)</label>
-                    <input type="text" id="search-regex" name="regex_pattern" class="w-full p-2 border rounded">
+                <div class="form-group space-y-1.5">
+                    <label for="search-regex" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Regex Pattern (Optional)</label>
+                    <input type="text" id="search-regex" name="regex_pattern" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white font-mono text-sm">
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label for="search-enabled">Enabled</label>
-                        <select id="search-enabled" name="enabled" class="w-full p-2 border rounded">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="form-group space-y-1.5">
+                        <label for="search-enabled" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Enabled</label>
+                        <select id="search-enabled" name="enabled" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                             <option value="true">Yes</option>
                             <option value="false">No</option>
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="search-threshold">Notification Threshold (Days)</label>
-                        <input type="number" id="search-threshold" name="notification_threshold_days" min="1" value="1" class="w-full p-2 border rounded">
+                    <div class="form-group space-y-1.5">
+                        <label for="search-threshold" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Notification Threshold (Days)</label>
+                        <input type="number" id="search-threshold" name="notification_threshold_days" min="1" value="1" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label for="search-min-price">Min Price</label>
-                        <input type="number" id="search-min-price" name="min_price" step="0.01" class="w-full p-2 border rounded">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="form-group space-y-1.5">
+                        <label for="search-min-price" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Min Price</label>
+                        <input type="number" id="search-min-price" name="min_price" step="0.01" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                     </div>
 
-                    <div class="form-group">
-                        <label for="search-max-price">Max Price</label>
-                        <input type="number" id="search-max-price" name="max_price" step="0.01" class="w-full p-2 border rounded">
+                    <div class="form-group space-y-1.5">
+                        <label for="search-max-price" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Max Price</label>
+                        <input type="number" id="search-max-price" name="max_price" step="0.01" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="search-category">Category Filter</label>
-                    <input type="text" id="search-category" name="category_filter" class="w-full p-2 border rounded">
+                <div class="form-group space-y-1.5">
+                    <label for="search-category" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Category Filter</label>
+                    <input type="text" id="search-category" name="category_filter" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                 </div>
 
-                <div class="form-group">
-                    <label for="search-seller">Seller Filter</label>
-                    <input type="text" id="search-seller" name="seller_filter" class="w-full p-2 border rounded">
+                <div class="form-group space-y-1.5">
+                    <label for="search-seller" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Seller Filter</label>
+                    <input type="text" id="search-seller" name="seller_filter" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                 </div>
 
-                <div class="form-group">
-                    <label for="search-sort">Sort By</label>
-                    <select id="search-sort" name="sort_by" class="w-full p-2 border rounded">
+                <div class="form-group space-y-1.5">
+                    <label for="search-sort" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Sort By</label>
+                    <select id="search-sort" name="sort_by" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white">
                         <option value="ends_soonest">Ends Soonest</option>
                         <option value="newest">Newest</option>
                         <option value="price_low">Price: Low to High</option>
@@ -119,14 +119,14 @@
                     </select>
                 </div>
 
-                <div class="flex justify-end space-x-2 mt-6">
-                    <button type="button" id="delete-search-btn" class="btn btn-danger hidden">
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" id="delete-search-btn" class="px-5 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors hidden mr-auto">
                         Delete
                     </button>
-                    <button type="button" id="cancel-btn" class="btn btn-secondary">
+                    <button type="button" id="cancel-btn" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors shadow-sm">
                         Save
                     </button>
                 </div>
@@ -175,21 +175,21 @@ document.addEventListener('DOMContentLoaded', function() {
         searchesTable.innerHTML = '';
         currentSearches.forEach(search => {
             const row = document.createElement('tr');
-            row.className = 'border-b hover:bg-gray-50';
+            row.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors';
 
             row.innerHTML = `
-                <td class="p-2">${search.name}</td>
-                <td class="p-2">${search.query}</td>
-                <td class="p-2">
-                    <span class="badge ${search.enabled ? 'badge-success' : 'badge-danger'}">
+                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">${search.name}</td>
+                <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 max-w-xs truncate" title="${search.query}">${search.query}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${search.enabled ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800'}">
                         ${search.enabled ? 'Active' : 'Disabled'}
                     </span>
                 </td>
-                <td class="p-2">${search.last_checked || 'Never'}</td>
-                <td class="p-2">0</td>
-                <td class="p-2">
-                    <button class="btn btn-secondary btn-sm view-search" data-id="${search.id}">View</button>
-                    <button class="btn btn-success btn-sm execute-search" data-id="${search.id}">Execute</button>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${search.last_checked || 'Never'}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-900 dark:text-white font-medium">0</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm space-x-3">
+                    <button class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium view-search" data-id="${search.id}">View</button>
+                    <button class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium execute-search" data-id="${search.id}">Execute</button>
                 </td>
             `;
 
