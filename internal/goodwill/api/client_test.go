@@ -28,7 +28,7 @@ func TestNewShopGoodwillClient(t *testing.T) {
 		cfg := &config.ShopGoodwillConfig{
 			Username:       "testuser",
 			Password:       "testpass",
-			APIBaseURL:     "https://api.shopgoodwill.com",
+			APIBaseURL:     "https://buyerapi.shopgoodwill.com",
 			MaxRetries:     3,
 			RequestTimeout: 30 * time.Second,
 		}
@@ -59,7 +59,7 @@ func TestNewShopGoodwillClient(t *testing.T) {
 		cfg := &config.ShopGoodwillConfig{
 			Username:       "testuser",
 			Password:       "testpass",
-			APIBaseURL:     "https://api.shopgoodwill.com",
+			APIBaseURL:     "https://buyerapi.shopgoodwill.com",
 			MaxRetries:     3,
 			RequestTimeout: 30 * time.Second,
 		}
@@ -177,7 +177,7 @@ func TestAuthenticate(t *testing.T) {
 		cfg := &config.ShopGoodwillConfig{
 			Username:       "testuser",
 			Password:       "testpass",
-			APIBaseURL:     "https://api.shopgoodwill.com",
+			APIBaseURL:     "https://buyerapi.shopgoodwill.com",
 			MaxRetries:     3,
 			RequestTimeout: 30 * time.Second,
 		}

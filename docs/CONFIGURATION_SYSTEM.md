@@ -77,7 +77,7 @@ flowchart TD
 ```
 GOODWILL_USERNAME          # ShopGoodwill username
 GOODWILL_PASSWORD          # ShopGoodwill password
-GOODWILL_API_BASE_URL      # API base URL (default: https://api.shopgoodwill.com)
+GOODWILL_API_BASE_URL      # API base URL (default: https://buyerapi.shopgoodwill.com)
 GOODWILL_MAX_RETRIES       # Max API retries (default: 3)
 GOODWILL_REQUEST_TIMEOUT   # Request timeout in seconds (default: 30)
 ```
@@ -244,7 +244,7 @@ dbCmd.Flags().BoolVar(&dbForce, "force", false, "Force operation (e.g., for rest
 shopgoodwill:
   username: "your_username"
   password: "your_password"
-  api_base_url: "https://api.shopgoodwill.com"
+  api_base_url: "https://buyerapi.shopgoodwill.com"
   max_retries: 3
   request_timeout: 30s
 

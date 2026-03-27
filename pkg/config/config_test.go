@@ -21,7 +21,7 @@ func TestGetEnvVars(t *testing.T) {
 			mockEnv: map[string]string{
 				"GOODWILL_USERNAME":            "testuser",
 				"GOODWILL_PASSWORD":            "testpass",
-				"GOODWILL_API_BASE_URL":        "https://test-api.shopgoodwill.com",
+				"GOODWILL_API_BASE_URL":        "https://test-buyerapi.shopgoodwill.com",
 				"GOODWILL_MAX_RETRIES":         "5",
 				"GOODWILL_REQUEST_TIMEOUT":     "60s",
 				"SEARCH_INTERVAL_MINUTES":      "30",
@@ -67,7 +67,7 @@ func TestGetEnvVars(t *testing.T) {
 				ShopGoodwill: ShopGoodwillConfig{
 					Username:       "testuser",
 					Password:       "testpass",
-					APIBaseURL:     "https://test-api.shopgoodwill.com",
+					APIBaseURL:     "https://test-buyerapi.shopgoodwill.com",
 					MaxRetries:     5,
 					RequestTimeout: 60 * time.Second,
 				},
@@ -138,7 +138,7 @@ func TestGetEnvVars(t *testing.T) {
 			name: "Valid .env file with full config",
 			mockEnvFile: `GOODWILL_USERNAME=testenvfileuser
 GOODWILL_PASSWORD=envfilepass
-GOODWILL_API_BASE_URL=https://envfile-api.shopgoodwill.com
+GOODWILL_API_BASE_URL=https://envfile-buyerapi.shopgoodwill.com
 GOODWILL_MAX_RETRIES=4
 GOODWILL_REQUEST_TIMEOUT=45s
 SEARCH_INTERVAL_MINUTES=20
@@ -185,7 +185,7 @@ LOG_MAX_AGE=10`,
 				ShopGoodwill: ShopGoodwillConfig{
 					Username:       "testenvfileuser",
 					Password:       "envfilepass",
-					APIBaseURL:     "https://envfile-api.shopgoodwill.com",
+					APIBaseURL:     "https://envfile-buyerapi.shopgoodwill.com",
 					MaxRetries:     4,
 					RequestTimeout: 45 * time.Second,
 				},
@@ -264,9 +264,9 @@ GOODWILL_PASSWORD=filepass`,
 				ShopGoodwill: ShopGoodwillConfig{
 					Username:       "envuser",
 					Password:       "envpass",
-					APIBaseURL:     "https://api.shopgoodwill.com", // defaults
-					MaxRetries:     3,                              // defaults
-					RequestTimeout: 30 * time.Second,               // defaults
+					APIBaseURL:     "https://buyerapi.shopgoodwill.com", // defaults
+					MaxRetries:     3,                                   // defaults
+					RequestTimeout: 30 * time.Second,                    // defaults
 				},
 				Search: SearchConfig{
 					IntervalMinutes:           15,    // defaults
@@ -337,7 +337,7 @@ GOODWILL_PASSWORD=filepass`,
 				ShopGoodwill: ShopGoodwillConfig{
 					Username:       "",
 					Password:       "",
-					APIBaseURL:     "https://api.shopgoodwill.com",
+					APIBaseURL:     "https://buyerapi.shopgoodwill.com",
 					MaxRetries:     3,
 					RequestTimeout: 30 * time.Second,
 				},
