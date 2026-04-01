@@ -260,11 +260,12 @@ func (s *Scheduler) executeSearchWithRetry(search db.GormSearch) error {
 func (s *Scheduler) processSearchResults(search db.GormSearch, response *api.SearchResponse) int {
 	newItemsFound := 0
 
-	for _, item := range response.Items {
+	for _, item := range response.SearchResults.Items {
 		// Check if item already exists
-		existingItem, err := s.repo.GetItemByGoodwillID(context.Background(), item.ID)
+		itemIDStr := fmt.Sprintf("%d", item.ItemID)
+		existingItem, err := s.repo.GetItemByGoodwillID(context.Background(), itemIDStr)
 		if err != nil {
-			log.Errorf("Failed to check for existing item %s: %v", item.ID, err)
+			log.Errorf("Failed to check for existing item %s: %v", itemIDStr, err)
 			continue
 		}
 
@@ -276,7 +277,7 @@ func (s *Scheduler) processSearchResults(search db.GormSearch, response *api.Sea
 				existingItem.LastSeen = time.Now()
 
 				if err := s.repo.UpdateItem(context.Background(), *existingItem); err != nil {
-					log.Errorf("Failed to update existing item %s: %v", item.ID, err)
+					log.Errorf("Failed to update existing item %s: %v", itemIDStr, err)
 				} else {
 					// Record price history
 					priceHistory := db.GormPriceHistory{
@@ -288,7 +289,7 @@ func (s *Scheduler) processSearchResults(search db.GormSearch, response *api.Sea
 
 					_, err := s.repo.AddPriceHistory(context.Background(), priceHistory)
 					if err != nil {
-						log.Errorf("Failed to record price history for item %s: %v", item.ID, err)
+						log.Errorf("Failed to record price history for item %s: %v", itemIDStr, err)
 					}
 				}
 			}
@@ -298,17 +299,15 @@ func (s *Scheduler) processSearchResults(search db.GormSearch, response *api.Sea
 		// New item found
 		newItemsFound++
 
-		// Convert search item to database item
 		dbItem, err := api.ParseSearchItemToDBItem(item)
 		if err != nil {
-			log.Errorf("Failed to parse search item %s: %v", item.ID, err)
+			log.Errorf("Failed to parse search item %d: %v", item.ItemID, err)
 			continue
 		}
 
-		// Add new item to database
 		itemID, err := s.repo.AddItem(context.Background(), *dbItem)
 		if err != nil {
-			log.Errorf("Failed to add new item %s: %v", item.ID, err)
+			log.Errorf("Failed to add new item %d: %v", item.ItemID, err)
 			continue
 		}
 
@@ -322,16 +321,16 @@ func (s *Scheduler) processSearchResults(search db.GormSearch, response *api.Sea
 
 		_, err = s.repo.AddPriceHistory(context.Background(), priceHistory)
 		if err != nil {
-			log.Errorf("Failed to record initial price history for item %s: %v", item.ID, err)
+			log.Errorf("Failed to record initial price history for item %d: %v", item.ItemID, err)
 		}
 
 		// Create search-item mapping
 		err = s.repo.AddSearchItemMapping(context.Background(), search.ID, itemID, time.Now())
 		if err != nil {
-			log.Errorf("Failed to create search-item mapping for item %s: %v", item.ID, err)
+			log.Errorf("Failed to create search-item mapping for item %d: %v", item.ItemID, err)
 		}
 
-		log.Infof("Added new item: %s - %s", item.ID, item.Title)
+		log.Infof("Added new item: %d - %s", item.ItemID, item.Title)
 	}
 
 	return newItemsFound
@@ -373,7 +372,7 @@ func (s *Scheduler) executeSearchAttempt(search db.GormSearch) error {
 		return fmt.Errorf("search execution failed: %w", err)
 	}
 
-	log.Infof("Search '%s' completed: found %d items", search.Name, searchResponse.Total)
+	log.Infof("Search '%s' completed: found %d items", search.Name, searchResponse.SearchResults.TotalResultCount)
 
 	// Process search results
 	newItemsFound := s.processSearchResults(search, searchResponse)
@@ -383,7 +382,7 @@ func (s *Scheduler) executeSearchAttempt(search db.GormSearch) error {
 		SearchID:      search.ID,
 		ExecutedAt:    time.Now(),
 		Status:        "success",
-		ItemsFound:    searchResponse.Total,
+		ItemsFound:    searchResponse.SearchResults.TotalResultCount,
 		NewItemsFound: newItemsFound,
 		DurationMS:    int(time.Since(startTime).Milliseconds()),
 	}

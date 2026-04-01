@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/gorilla/csrf"
+	csrf "filippo.io/csrf/gorilla"
 	log "github.com/sirupsen/logrus"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/core/scheduling"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/db"
@@ -69,9 +69,6 @@ func (s *Server) Start() error {
 
 	csrfMiddleware := csrf.Protect(
 		csrfKey,
-		csrf.Secure(!s.config.TLS.Enabled && os.Getenv("ENV") != "development"), // True in prod, false otherwise
-		csrf.Path("/"),
-		// The API uses JSON, and we also have forms. By default gorilla/csrf checks X-CSRF-Token or csrf_token.
 	)
 
 	// Create HTTP server

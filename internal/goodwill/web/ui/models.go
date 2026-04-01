@@ -16,7 +16,6 @@ type DashboardData struct {
 	RecentNotifications []api.NotificationResponse
 	SearchStats         []SearchStat
 	FlashMessages       []FlashMessage
-	CSRFToken           string
 }
 
 // FlashMessage represents a flash message to display in the UI
@@ -41,7 +40,6 @@ type SearchesData struct {
 	Limit         int
 	Offset        int
 	FlashMessages []FlashMessage
-	CSRFToken     string
 }
 
 // ItemsData represents data for the items page
@@ -52,7 +50,6 @@ type ItemsData struct {
 	Limit         int
 	Offset        int
 	FlashMessages []FlashMessage
-	CSRFToken     string
 }
 
 // NotificationsData represents data for the notifications page
@@ -63,7 +60,6 @@ type NotificationsData struct {
 	Limit         int
 	Offset        int
 	FlashMessages []FlashMessage
-	CSRFToken     string
 }
 
 // SettingsData represents data for the settings page
@@ -71,7 +67,6 @@ type SettingsData struct {
 	Title         string
 	FlashMessages []FlashMessage
 	// Settings data would go here
-	CSRFToken string
 }
 
 // LoginData represents data for the login page
@@ -79,5 +74,4 @@ type LoginData struct {
 	Title         string
 	FlashMessages []FlashMessage
 	// Login form data would go here
-	CSRFToken string
 }

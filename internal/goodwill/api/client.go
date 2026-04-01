@@ -3,6 +3,9 @@ package api
 import (
 	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +18,11 @@ import (
 	"github.com/toozej/go-find-goodwill/internal/goodwill/antibot"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/db"
 	"github.com/toozej/go-find-goodwill/pkg/config"
+)
+
+const (
+	// aesKey is the fixed key used by ShopGoodwill for credential obfuscation
+	aesKey = "0123456789123456"
 )
 
 // ShopGoodwillClient represents the ShopGoodwill API client
@@ -110,15 +118,28 @@ func (c *ShopGoodwillClient) authenticateInternal(ctx context.Context) error {
 	}
 
 	// Prepare authentication request
-	authURL := c.baseURL.JoinPath("auth", "login")
+	authURL := c.baseURL.JoinPath("SignIn", "Login")
 	if authURL == nil {
 		return fmt.Errorf("failed to construct auth URL")
 	}
 
+	// Encrypt credentials
+	encUser, err := c.encryptCredentials(c.config.Username)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt username: %w", err)
+	}
+	encPass, err := c.encryptCredentials(c.config.Password)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt password: %w", err)
+	}
+
 	// Create request payload
-	payload := map[string]string{
-		"username": c.config.Username,
-		"password": c.config.Password,
+	payload := map[string]interface{}{
+		"userName":   encUser,
+		"password":   encPass,
+		"remember":   false,
+		"appVersion": c.config.AppVersion,
+		"browser":    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 	}
 
 	payloadBytes, err := json.Marshal(payload)
@@ -126,15 +147,14 @@ func (c *ShopGoodwillClient) authenticateInternal(ctx context.Context) error {
 		return fmt.Errorf("failed to marshal auth payload: %w", err)
 	}
 
-	// Create request with context
-	req, err := http.NewRequestWithContext(ctx, "POST", authURL.String(), bytes.NewBuffer(payloadBytes))
+	// Create request with anti-bot features to get necessary headers like User-Agent
+	req, err := c.createRequestWithAntiBot(ctx, "POST", authURL.String(), bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return fmt.Errorf("failed to create auth request: %w", err)
 	}
 
-	// Set headers
+	// Set required content type header
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
 
 	// Execute request with retry manager
 	var resp *http.Response
@@ -159,8 +179,9 @@ func (c *ShopGoodwillClient) authenticateInternal(ctx context.Context) error {
 
 	// Parse response
 	var authResponse struct {
-		Token     string        `json:"token"`
-		ExpiresIn time.Duration `json:"expires_in"`
+		Status      bool   `json:"status"`
+		Message     string `json:"message"`
+		AccessToken string `json:"accessToken"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
@@ -172,13 +193,46 @@ func (c *ShopGoodwillClient) authenticateInternal(ctx context.Context) error {
 		log.Errorf("Failed to close auth response body: %v", err)
 	}
 
+	if !authResponse.Status {
+		return fmt.Errorf("authentication failed: %s", authResponse.Message)
+	}
+
 	// Set authentication token and expiration (already thread-safe due to defer unlock)
-	c.authToken = authResponse.Token
-	c.authExpired = time.Now().Add(authResponse.ExpiresIn)
+	c.authToken = authResponse.AccessToken
+	// New API doesn't specify expiration in simple login, set to 2 hours
+	c.authExpired = time.Now().Add(2 * time.Hour)
 
 	log.Infof("Successfully authenticated with ShopGoodwill API")
 
 	return nil
+}
+
+// encryptCredentials encrypts a string using AES-CBC with the fixed ShopGoodwill key
+func (c *ShopGoodwillClient) encryptCredentials(text string) (string, error) {
+	key := []byte(aesKey)
+	plaintext := []byte(text)
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	// PKCS7 padding
+	padding := block.BlockSize() - (len(plaintext) % block.BlockSize())
+	// Ensure padding is within byte range to satisfy gosec G115
+	if padding < 0 || padding > 255 {
+		return "", fmt.Errorf("invalid padding size: %d", padding)
+	}
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	plaintext = append(plaintext, padtext...)
+
+	ciphertext := make([]byte, len(plaintext))
+	// Use the key as the IV as well (based on reverse engineering of the ShopGoodwill API obfuscation scheme)
+	// #nosec G407
+	mode := cipher.NewCBCEncrypter(block, key)
+	mode.CryptBlocks(ciphertext, plaintext)
+
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
 // Search executes a search query on ShopGoodwill
@@ -189,50 +243,52 @@ func (c *ShopGoodwillClient) Search(ctx context.Context, query string, params Se
 	}
 
 	// Prepare search URL
-	searchURL := c.baseURL.JoinPath("search")
+	searchURL := c.baseURL.JoinPath("Search", "ItemListing")
 	if searchURL == nil {
 		return nil, fmt.Errorf("failed to construct search URL")
 	}
 
-	// Add query parameters
-	q := searchURL.Query()
-	q.Set("q", query)
-
-	if params.Category != "" {
-		q.Set("category", params.Category)
-	}
-	if params.Seller != "" {
-		q.Set("seller", params.Seller)
-	}
-	if params.Condition != "" {
-		q.Set("condition", params.Condition)
-	}
-	if params.Shipping != "" {
-		q.Set("shipping", params.Shipping)
-	}
-	if params.MinPrice > 0 {
-		q.Set("min_price", fmt.Sprintf("%.2f", params.MinPrice))
-	}
-	if params.MaxPrice > 0 {
-		q.Set("max_price", fmt.Sprintf("%.2f", params.MaxPrice))
-	}
-	if params.SortBy != "" {
-		q.Set("sort_by", params.SortBy)
-	}
-	if params.Page > 0 {
-		q.Set("page", fmt.Sprintf("%d", params.Page))
-	}
-	if params.PageSize > 0 {
-		q.Set("page_size", fmt.Sprintf("%d", params.PageSize))
+	// Create search payload
+	payload := map[string]interface{}{
+		"searchText":                      query,
+		"selectedCategoryIds":             params.Category,
+		"selectedSellerIds":               params.Seller,
+		"lowPrice":                        fmt.Sprintf("%.2f", params.MinPrice),
+		"highPrice":                       fmt.Sprintf("%.2f", params.MaxPrice),
+		"sortColumn":                      "1", // Default to ending soon
+		"page":                            fmt.Sprintf("%d", params.Page),
+		"pageSize":                        fmt.Sprintf("%d", params.PageSize),
+		"sortDescending":                  "false",
+		"searchPickupOnly":                "false",
+		"searchNoPickupOnly":              "false",
+		"searchOneCentShippingOnly":       "false",
+		"searchDescriptions":              "false",
+		"searchClosedAuctions":            "false",
+		"searchCanadaShipping":            "false",
+		"searchInternationalShippingOnly": "false",
+		"searchUSOnlyShipping":            "false",
+		"useBuyerPrefs":                   "true",
 	}
 
-	searchURL.RawQuery = q.Encode()
+	if params.SortBy == "price_asc" {
+		payload["sortColumn"] = "2"
+		payload["sortDescending"] = "false"
+	} else if params.SortBy == "price_desc" {
+		payload["sortColumn"] = "2"
+		payload["sortDescending"] = "true"
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal search payload: %w", err)
+	}
 
 	// Create request with anti-bot features
-	req, err := c.createRequestWithAntiBot(ctx, "GET", searchURL.String(), nil)
+	req, err := c.createRequestWithAntiBot(ctx, "POST", searchURL.String(), bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create search request: %w", err)
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	// Execute request with anti-bot protection
 	resp, err := c.executeRequestWithAntiBot(ctx, req, "search")
@@ -258,7 +314,7 @@ func (c *ShopGoodwillClient) GetItemDetails(ctx context.Context, itemID string) 
 	}
 
 	// Prepare item details URL
-	itemURL := c.baseURL.JoinPath("items", itemID)
+	itemURL := c.baseURL.JoinPath("ItemDetail", "GetItemDetailModelByItemId", itemID)
 	if itemURL == nil {
 		return nil, fmt.Errorf("failed to construct item URL")
 	}
@@ -303,52 +359,46 @@ type SearchParams struct {
 
 // SearchResponse represents a search response from ShopGoodwill API
 type SearchResponse struct {
-	Items      []SearchItem `json:"items"`
-	Total      int          `json:"total"`
-	Page       int          `json:"page"`
-	PageSize   int          `json:"page_size"`
-	TotalPages int          `json:"total_pages"`
+	SearchResults struct {
+		Items            []SearchItem `json:"items"`
+		TotalResultCount int          `json:"totalResultCount"`
+		PageCount        int          `json:"pageCount"`
+		CurrentPage      int          `json:"currentPage"`
+	} `json:"searchResults"`
 }
 
 // SearchItem represents an item in search results
 type SearchItem struct {
-	ID             string   `json:"id"`
-	Title          string   `json:"title"`
-	Seller         string   `json:"seller"`
-	CurrentPrice   float64  `json:"current_price"`
-	BuyNowPrice    *float64 `json:"buy_now_price"`
-	URL            string   `json:"url"`
-	ImageURL       string   `json:"image_url"`
-	EndsAt         string   `json:"ends_at"`
-	Category       string   `json:"category"`
-	Subcategory    string   `json:"subcategory"`
-	Condition      string   `json:"condition"`
-	ShippingCost   *float64 `json:"shipping_cost"`
-	ShippingMethod string   `json:"shipping_method"`
-	WatchCount     int      `json:"watch_count"`
-	BidCount       int      `json:"bid_count"`
-	ViewCount      int      `json:"view_count"`
+	ItemID       int      `json:"itemId"`
+	Title        string   `json:"title"`
+	SellerName   string   `json:"sellerName"`
+	CurrentPrice float64  `json:"currentPrice"`
+	BuyItNow     *float64 `json:"buyItNowPrice"`
+	ImageName    string   `json:"imageName"`
+	EndTime      string   `json:"endTime"`
+	CategoryName string   `json:"categoryName"`
+	Condition    string   `json:"condition"`
+	WatchCount   int      `json:"watchCount"`
+	BidCount     int      `json:"bids"`
 }
 
 // ItemDetails represents detailed item information
 type ItemDetails struct {
-	ID              string   `json:"id"`
+	ItemID          int      `json:"itemId"`
 	Title           string   `json:"title"`
 	Description     string   `json:"description"`
-	Seller          string   `json:"seller"`
-	CurrentPrice    float64  `json:"current_price"`
-	BuyNowPrice     *float64 `json:"buy_now_price"`
-	URL             string   `json:"url"`
-	ImageURL        string   `json:"image_url"`
-	EndsAt          string   `json:"ends_at"`
-	Category        string   `json:"category"`
-	Subcategory     string   `json:"subcategory"`
-	Condition       string   `json:"condition"`
-	ShippingCost    *float64 `json:"shipping_cost"`
-	ShippingMethod  string   `json:"shipping_method"`
+	SellerName      string   `json:"sellerName"`
+	CurrentPrice    float64  `json:"currentPrice"`
+	BuyItNowPrice   *float64 `json:"buyItNowPrice"`
+	ImageName       string   `json:"imageName"`
+	EndTime         string   `json:"endTime"`
+	CategoryName    string   `json:"categoryName"`
+	ConditionName   string   `json:"conditionName"`
+	ShippingCost    *float64 `json:"shippingCost"`
+	ShippingMethod  string   `json:"shippingMethod"`
 	Location        string   `json:"location"`
-	PickupAvailable bool     `json:"pickup_available"`
-	ReturnsAccepted bool     `json:"returns_accepted"`
+	PickupAvailable bool     `json:"pickupAvailable"`
+	ReturnsAccepted bool     `json:"returnsAccepted"`
 	Dimensions      string   `json:"dimensions"`
 	Weight          string   `json:"weight"`
 	Material        string   `json:"material"`
@@ -361,34 +411,34 @@ type ItemDetails struct {
 // ParseSearchItemToDBItem converts a SearchItem to a database Item model
 func ParseSearchItemToDBItem(item SearchItem) (*db.GormItem, error) {
 	// Parse ends_at timestamp
-	endsAt, err := time.Parse(time.RFC3339, item.EndsAt)
+	endsAt, err := time.Parse(time.RFC3339, item.EndTime)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse ends_at: %w", err)
+		// Fallback for different format if needed, but the API seems to use RFC3339
+		endsAt, err = time.Parse("2006-01-02T15:04:05Z", item.EndTime)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse endTime %q: %w", item.EndTime, err)
+		}
 	}
 
 	// Create database item
 	dbItem := &db.GormItem{
-		GoodwillID:     item.ID,
-		Title:          item.Title,
-		Seller:         item.Seller,
-		CurrentPrice:   item.CurrentPrice,
-		BuyNowPrice:    item.BuyNowPrice,
-		URL:            item.URL,
-		ImageURL:       item.ImageURL,
-		EndsAt:         &endsAt,
-		Status:         "active",
-		Category:       item.Category,
-		Subcategory:    item.Subcategory,
-		Condition:      item.Condition,
-		ShippingCost:   item.ShippingCost,
-		ShippingMethod: item.ShippingMethod,
-		WatchCount:     item.WatchCount,
-		BidCount:       item.BidCount,
-		ViewCount:      item.ViewCount,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-		FirstSeen:      time.Now(),
-		LastSeen:       time.Now(),
+		GoodwillID:   fmt.Sprintf("%d", item.ItemID),
+		Title:        item.Title,
+		Seller:       item.SellerName,
+		CurrentPrice: item.CurrentPrice,
+		BuyNowPrice:  item.BuyItNow,
+		URL:          fmt.Sprintf("https://www.shopgoodwill.com/Item/%d", item.ItemID),
+		ImageURL:     item.ImageName,
+		EndsAt:       &endsAt,
+		Status:       "active",
+		Category:     item.CategoryName,
+		Condition:    item.Condition,
+		WatchCount:   item.WatchCount,
+		BidCount:     item.BidCount,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+		FirstSeen:    time.Now(),
+		LastSeen:     time.Now(),
 	}
 
 	return dbItem, nil
@@ -397,38 +447,40 @@ func ParseSearchItemToDBItem(item SearchItem) (*db.GormItem, error) {
 // ParseItemDetailsToDBItem converts ItemDetails to database Item model
 func ParseItemDetailsToDBItem(details ItemDetails) (*db.GormItem, error) {
 	// Parse ends_at timestamp
-	endsAt, err := time.Parse(time.RFC3339, details.EndsAt)
+	endsAt, err := time.Parse(time.RFC3339, details.EndTime)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse ends_at: %w", err)
+		endsAt, err = time.Parse("2006-01-02T15:04:05Z", details.EndTime)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse endTime %q: %w", details.EndTime, err)
+		}
 	}
 
 	// Create database item
 	dbItem := &db.GormItem{
-		GoodwillID:      details.ID,
+		GoodwillID:      fmt.Sprintf("%d", details.ItemID),
 		Title:           details.Title,
-		Seller:          details.Seller,
+		Seller:          details.SellerName,
 		CurrentPrice:    details.CurrentPrice,
-		BuyNowPrice:     details.BuyNowPrice,
-		URL:             details.URL,
-		ImageURL:        details.ImageURL,
+		BuyNowPrice:     details.BuyItNowPrice,
+		URL:             fmt.Sprintf("https://www.shopgoodwill.com/Item/%d", details.ItemID),
+		ImageURL:        details.ImageName,
 		EndsAt:          &endsAt,
 		Status:          "active",
-		Category:        details.Category,
-		Subcategory:     details.Subcategory,
-		Condition:       details.Condition,
+		Category:        details.CategoryName,
+		Condition:       details.ConditionName,
 		ShippingCost:    details.ShippingCost,
 		ShippingMethod:  details.ShippingMethod,
 		Location:        details.Location,
 		PickupAvailable: details.PickupAvailable,
 		ReturnsAccepted: details.ReturnsAccepted,
-		Description:     details.Description, // Merged
-		Dimensions:      details.Dimensions,  // Merged
-		Weight:          details.Weight,      // Merged
-		Material:        details.Material,    // Merged
-		Color:           details.Color,       // Merged
-		Brand:           details.Brand,       // Merged
-		Model:           details.Model,       // Merged
-		Year:            details.Year,        // Merged
+		Description:     details.Description,
+		Dimensions:      details.Dimensions,
+		Weight:          details.Weight,
+		Material:        details.Material,
+		Color:           details.Color,
+		Brand:           details.Brand,
+		Model:           details.Model,
+		Year:            details.Year,
 		WatchCount:      0,
 		BidCount:        0,
 		ViewCount:       0,

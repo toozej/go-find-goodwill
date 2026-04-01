@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gorilla/csrf"
 	"github.com/sirupsen/logrus"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/db"
 	"github.com/toozej/go-find-goodwill/internal/goodwill/web/api"
@@ -171,7 +170,6 @@ func (h *UIHandler) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		RecentNotifications: notificationResponses,
 		SearchStats:         searchStats,
 		FlashMessages:       []FlashMessage{},
-		CSRFToken:           csrf.Token(r),
 	}
 
 	if tmpl, ok := h.templates["dashboard.html"]; ok {
@@ -226,7 +224,6 @@ func (h *UIHandler) handleSearches(w http.ResponseWriter, r *http.Request) {
 		Limit:         20,
 		Offset:        0,
 		FlashMessages: []FlashMessage{},
-		CSRFToken:     csrf.Token(r),
 	}
 
 	if tmpl, ok := h.templates["searches.html"]; ok {
@@ -291,7 +288,6 @@ func (h *UIHandler) handleItems(w http.ResponseWriter, r *http.Request) {
 		Limit:         20,
 		Offset:        0,
 		FlashMessages: []FlashMessage{},
-		CSRFToken:     csrf.Token(r),
 	}
 
 	if tmpl, ok := h.templates["items.html"]; ok {
@@ -344,7 +340,6 @@ func (h *UIHandler) handleNotifications(w http.ResponseWriter, r *http.Request) 
 		Limit:         20,
 		Offset:        0,
 		FlashMessages: []FlashMessage{},
-		CSRFToken:     csrf.Token(r),
 	}
 
 	if tmpl, ok := h.templates["notifications.html"]; ok {
@@ -362,7 +357,6 @@ func (h *UIHandler) handleSettings(w http.ResponseWriter, r *http.Request) {
 	data := SettingsData{
 		Title:         "System Settings",
 		FlashMessages: []FlashMessage{},
-		CSRFToken:     csrf.Token(r),
 	}
 
 	if tmpl, ok := h.templates["settings.html"]; ok {
@@ -380,7 +374,6 @@ func (h *UIHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	data := LoginData{
 		Title:         "Login",
 		FlashMessages: []FlashMessage{},
-		CSRFToken:     csrf.Token(r),
 	}
 
 	if tmpl, ok := h.templates["login.html"]; ok {

@@ -264,9 +264,10 @@ GOODWILL_PASSWORD=filepass`,
 				ShopGoodwill: ShopGoodwillConfig{
 					Username:       "envuser",
 					Password:       "envpass",
-					APIBaseURL:     "https://buyerapi.shopgoodwill.com", // defaults
-					MaxRetries:     3,                                   // defaults
-					RequestTimeout: 30 * time.Second,                    // defaults
+					APIBaseURL:     "https://buyerapi.shopgoodwill.com/api", // defaults
+					AppVersion:     "0ac533a6087baed7",                      // defaults
+					MaxRetries:     3,                                       // defaults
+					RequestTimeout: 30 * time.Second,                        // defaults
 				},
 				Search: SearchConfig{
 					IntervalMinutes:           15,    // defaults
@@ -337,7 +338,8 @@ GOODWILL_PASSWORD=filepass`,
 				ShopGoodwill: ShopGoodwillConfig{
 					Username:       "",
 					Password:       "",
-					APIBaseURL:     "https://buyerapi.shopgoodwill.com",
+					APIBaseURL:     "https://buyerapi.shopgoodwill.com/api",
+					AppVersion:     "0ac533a6087baed7",
 					MaxRetries:     3,
 					RequestTimeout: 30 * time.Second,
 				},

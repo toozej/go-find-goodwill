@@ -1,7 +1,6 @@
 class GoodwillAPI {
     constructor(baseUrl = '/api/v1') {
         this.baseUrl = baseUrl;
-        this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     }
 
     async request(method, endpoint, data = null) {
@@ -12,11 +11,6 @@ class GoodwillAPI {
                 'Content-Type': 'application/json',
             }
         };
-
-        // Add CSRF token if available
-        if (this.csrfToken) {
-            options.headers['X-CSRF-Token'] = this.csrfToken;
-        }
 
         if (data) {
             options.body = JSON.stringify(data);

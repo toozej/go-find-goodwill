@@ -39,7 +39,8 @@ type Config struct {
 type ShopGoodwillConfig struct {
 	Username       string        `env:"GOODWILL_USERNAME" yaml:"username"`
 	Password       string        `env:"GOODWILL_PASSWORD" yaml:"password"`
-	APIBaseURL     string        `env:"GOODWILL_API_BASE_URL" envDefault:"https://buyerapi.shopgoodwill.com" yaml:"api_base_url"`
+	APIBaseURL     string        `env:"GOODWILL_API_BASE_URL" envDefault:"https://buyerapi.shopgoodwill.com/api" yaml:"api_base_url"`
+	AppVersion     string        `env:"GOODWILL_APP_VERSION" envDefault:"0ac533a6087baed7" yaml:"app_version"`
 	MaxRetries     int           `env:"GOODWILL_MAX_RETRIES" envDefault:"3" yaml:"max_retries"`
 	RequestTimeout time.Duration `env:"GOODWILL_REQUEST_TIMEOUT" envDefault:"30s" yaml:"request_timeout"`
 }
