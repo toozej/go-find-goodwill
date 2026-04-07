@@ -7,6 +7,11 @@
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/toozej/go-find-goodwill/total)
 
 
+# ARCHIVED
+
+Archived repo due to it not being compatible with shopgoodwill.com's anti-bot protections, and it not being worth the time to play the cat/mouse game to stay ahead of them.
+
+
 ### Setup Instructions
 
 - set up new repository in quay.io web console
